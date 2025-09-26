@@ -1,0 +1,1 @@
+ALTER TABLE "user_nfcs" ADD COLUMN "is_active" text DEFAULT 'true' NOT NULL;

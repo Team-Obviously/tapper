@@ -4,6 +4,36 @@ import { userNfcs, users, connections } from '../schema';
 import { eq } from 'drizzle-orm';
 import { createInsertSchema } from 'drizzle-zod';
 
+// Helper function to update pending connections when a user registers their NFC
+async function updatePendingConnections(nfcId: string, userId: string) {
+    try {
+        // Find all connections where this NFC was scanned but the user was unknown
+        const pendingConnections = await db
+            .select()
+            .from(connections)
+            .where(eq(connections.toNfcId, nfcId));
+
+        // Update all pending connections to point to the actual user
+        for (const connection of pendingConnections) {
+            if (connection.toUserId === 'unknown_user') {
+                await db
+                    .update(connections)
+                    .set({
+                        toUserId: userId,
+                        data: {
+                            ...(connection.data || {}),
+                            userRegistered: true,
+                            registeredAt: new Date().toISOString()
+                        }
+                    })
+                    .where(eq(connections.id, connection.id));
+            }
+        }
+    } catch (error) {
+        console.error('Error updating pending connections:', error);
+    }
+}
+
 const insertUserNfcSchema = createInsertSchema(userNfcs);
 
 // Register user's own NFC
@@ -38,6 +68,12 @@ export async function registerNfc(req: Request, res: Response) {
             .insert(userNfcs)
             .values({ userId, nfcId, name, data })
             .returning();
+
+        // After successfully registering the NFC, check if there are any pending connections
+        // from users who scanned this NFC before it was registered
+        if (inserted) {
+            await updatePendingConnections(inserted.nfcId, inserted.userId);
+        }
 
         console.log('insertion: ', [inserted]);
         return res.status(201).json(inserted);
@@ -79,42 +115,43 @@ export async function connectNfc(req: Request, res: Response) {
             .where(eq(userNfcs.nfcId, toNfcId))
             .limit(1);
 
-        if (!targetNfc) {
-            return res.status(404).json({ error: 'NFC not found' });
+        let toUserId = null;
+
+        if (targetNfc) {
+            // NFC exists and is registered to a user
+            toUserId = targetNfc.userId;
+        } else {
+            // NFC doesn't exist in database yet - this is a new/unknown NFC
+            // We'll create a placeholder connection that can be updated later
+            // when the actual user registers this NFC
+            toUserId = 'unknown_user'; // Placeholder for unknown users
         }
 
-        // // Verify the fromNfcId belongs to fromUserId
-        // const [fromNfc] = await db
-        //     .select()
-        //     .from(userNfcs)
-        //     .where(eq(userNfcs.nfcId, fromNfcId))
-        //     .limit(1);
-
-        // get the fromNfcId from the userNfcs table for fromUserId
-        const [fromNfc] = await db
-            .select()
-            .from(userNfcs)
-            .where(eq(userNfcs.nfcId, fromNfcId))
-            .limit(1);
-
-        if (!fromNfc || fromNfc.userId !== fromUserId) {
-            return res.status(403).json({ error: 'Invalid NFC for user' });
-        }
-
-        // Create connection
+        // Create connection (even if the target user is unknown)
         const [connection] = await db
             .insert(connections)
             .values({
                 fromUserId,
-                toUserId: targetNfc.userId,
+                toUserId: toUserId,
                 fromNfcId,
                 toNfcId,
-                data: { connectedAt: new Date().toISOString() }
+                data: {
+                    connectedAt: new Date().toISOString(),
+                    isUnknownUser: !targetNfc, // Flag to indicate if this was an unknown user
+                    targetNfcExists: !!targetNfc
+                }
             })
             .returning();
 
-        return res.status(201).json(connection);
+        return res.status(201).json({
+            success: true,
+            connection,
+            message: targetNfc
+                ? 'Successfully connected with user!'
+                : 'Connection recorded! The user will be notified when they register this NFC.'
+        });
     } catch (error) {
+        console.error('Error creating connection:', error);
         return res.status(500).json({ error: 'Failed to create connection' });
     }
 }
