@@ -148,6 +148,7 @@ export default function MyTags() {
         setNfcData(null) // Clear the detected data
         toast.success('NFC tag registered successfully!')
       } else {
+        console.log('Failed to register NFC tag:', response.data)
         throw new Error(response.data?.error || 'Failed to register NFC tag')
       }
     } catch (error: any) {
@@ -178,6 +179,7 @@ export default function MyTags() {
         )
         toast.success(response.data.message)
       } else {
+        console.log('Failed to toggle NFC status:', response.data)
         throw new Error(response.data?.error || 'Failed to toggle NFC status')
       }
     } catch (error: any) {
