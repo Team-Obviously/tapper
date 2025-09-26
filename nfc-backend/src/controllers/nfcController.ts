@@ -9,6 +9,7 @@ const insertUserNfcSchema = createInsertSchema(userNfcs);
 // Register user's own NFC
 export async function registerNfc(req: Request, res: Response) {
     const parsed = insertUserNfcSchema.safeParse(req.body);
+    console.log("parsed data:: ", parsed)
     if (!parsed.success) {
         return res.status(400).json({ error: 'Invalid payload', details: parsed.error.flatten() });
     }
@@ -38,8 +39,10 @@ export async function registerNfc(req: Request, res: Response) {
             .values({ userId, nfcId, name, data })
             .returning();
 
+        console.log('insertion: ', [inserted]);
         return res.status(201).json(inserted);
     } catch (error) {
+        console.log("errror::: ", error);
         return res.status(500).json({ error: 'Failed to register NFC' });
     }
 }
@@ -136,8 +139,9 @@ export async function getUserConnections(req: Request, res: Response) {
 export async function toggleNfcStatus(req: Request, res: Response) {
     const { nfcId } = req.params;
     const { isActive } = req.body;
-
+    console.log("body:: ", req.params);
     if (typeof isActive !== 'boolean') {
+        console.log('isactive :: ', isActive);
         return res.status(400).json({ error: 'isActive must be a boolean value' });
     }
 
@@ -146,10 +150,11 @@ export async function toggleNfcStatus(req: Request, res: Response) {
         const [existingNfc] = await db
             .select()
             .from(userNfcs)
-            .where(eq(userNfcs.nfcId, nfcId))
+            .where(eq(userNfcs.nfcId, nfcId!))
             .limit(1);
 
         if (!existingNfc) {
+            console.log('issue in if', existingNfc)
             return res.status(404).json({ error: 'NFC not found' });
         }
 
@@ -157,9 +162,9 @@ export async function toggleNfcStatus(req: Request, res: Response) {
         const [updated] = await db
             .update(userNfcs)
             .set({ isActive: isActive.toString() })
-            .where(eq(userNfcs.nfcId, nfcId))
+            .where(eq(userNfcs.nfcId, nfcId!))
             .returning();
-
+        console.log('updated:: ', updated)
         return res.status(200).json({
             success: true,
             nfc: updated,

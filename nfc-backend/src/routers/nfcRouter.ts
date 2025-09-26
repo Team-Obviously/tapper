@@ -16,6 +16,6 @@ nfcRouter.post('/connect', connectNfc);
 nfcRouter.get('/connections/:userId', getUserConnections);
 
 // Toggle NFC status
-nfcRouter.patch('/toggle/:nfcId', toggleNfcStatus);
+nfcRouter.post('/toggle/:nfcId', toggleNfcStatus);
 
 
