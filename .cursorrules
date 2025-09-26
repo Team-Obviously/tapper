@@ -1,0 +1,128 @@
+# Mobile-First Development Rules
+
+## Core Principles
+
+- Always design and develop for mobile devices first, then enhance for larger screens
+- Use progressive enhancement: start with mobile layout and add desktop features
+- Prioritize touch interactions and mobile usability
+- Ensure content is accessible and readable on small screens
+
+## Tailwind CSS Mobile-First Guidelines
+
+### Responsive Design
+
+- Always write mobile styles first (no prefix), then add larger breakpoints
+- Use Tailwind's responsive prefixes: `sm:`, `md:`, `lg:`, `xl:`, `2xl:`
+- Example: `text-sm md:text-base lg:text-lg` (mobile-first approach)
+
+### Layout Patterns
+
+- Use `flex flex-col` for mobile layouts, then `md:flex-row` for desktop
+- Implement proper spacing: `p-4 md:p-6 lg:p-8`
+- Use `w-full` on mobile, then constrain with `md:max-w-*` on larger screens
+- Prefer `space-y-*` over `space-x-*` on mobile for vertical stacking
+
+### Typography
+
+- Start with smaller text sizes: `text-sm` or `text-base` for mobile
+- Use `md:text-lg` or `lg:text-xl` for desktop enhancement
+- Ensure line height is appropriate: `leading-tight` for mobile, `md:leading-normal` for desktop
+- Use `text-center` on mobile, `md:text-left` for desktop when appropriate
+
+### Navigation
+
+- Implement hamburger menu for mobile (`md:hidden`)
+- Show full navigation on desktop (`hidden md:flex`)
+- Use `fixed` or `sticky` positioning for mobile navigation
+- Ensure touch targets are at least 44px (`h-11` or `min-h-[44px]`)
+
+### Forms and Inputs
+
+- Use full width on mobile: `w-full`
+- Add proper padding: `p-3` or `p-4`
+- Use `text-base` to prevent zoom on iOS
+- Implement proper spacing between form elements: `space-y-4`
+
+### Images and Media
+
+- Use `w-full h-auto` for responsive images
+- Implement proper aspect ratios: `aspect-square`, `aspect-video`
+- Use `object-cover` for consistent image display
+- Consider lazy loading for mobile performance
+
+### Touch Interactions
+
+- Ensure minimum touch target size: `min-h-[44px] min-w-[44px]`
+- Use `active:` states for touch feedback
+- Implement proper hover states that work on touch devices
+- Use `cursor-pointer` for interactive elements
+
+### Performance
+
+- Optimize for mobile network speeds
+- Use `loading="lazy"` for images below the fold
+- Minimize bundle size for mobile users
+- Implement proper caching strategies
+
+### Accessibility
+
+- Ensure proper contrast ratios for mobile screens
+- Use semantic HTML elements
+- Implement proper focus states
+- Test with screen readers on mobile devices
+
+## Component Development
+
+- Design components mobile-first
+- Use CSS Grid and Flexbox for responsive layouts
+- Implement proper component composition
+- Test on actual mobile devices, not just browser dev tools
+
+## Testing Checklist
+
+- [ ] Test on actual mobile devices (iOS Safari, Android Chrome)
+- [ ] Verify touch interactions work properly
+- [ ] Check text readability without zooming
+- [ ] Ensure forms are usable on mobile keyboards
+- [ ] Test navigation and menu interactions
+- [ ] Verify images load and display correctly
+- [ ] Check performance on slower mobile connections
+
+## Common Mobile-First Patterns
+
+### Card Layout
+
+```tsx
+<div className="w-full p-4 md:p-6 lg:p-8">
+  <div className="flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-6">
+    {/* Content */}
+  </div>
+</div>
+```
+
+### Responsive Grid
+
+```tsx
+<div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+  {/* Grid items */}
+</div>
+```
+
+### Mobile Navigation
+
+```tsx
+<nav className="md:hidden">
+  {/* Mobile menu */}
+</nav>
+<nav className="hidden md:flex">
+  {/* Desktop menu */}
+</nav>
+```
+
+### Responsive Typography
+
+```tsx
+<h1 className="text-2xl font-bold md:text-3xl lg:text-4xl">Title</h1>
+```
+
+Remember: Mobile-first means starting with the smallest screen and working up, not just making desktop designs smaller.
