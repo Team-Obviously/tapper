@@ -10,7 +10,7 @@ const Layout = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {showNavbar && <Navbar />}
+      {/* {showNavbar && <Navbar />} */}
       <main className={showNavbar ? 'lg:ml-64 pb-20 lg:pb-0' : ''}>
         <Outlet />
       </main>

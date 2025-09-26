@@ -2,18 +2,37 @@ import { Landing } from '@/pages/Landing'
 import Registration from '@/pages/Registration'
 import Home from '@/pages/Home'
 import MyTags from '@/pages/MyTags'
-import { Route, Routes } from 'react-router-dom'
+import { BrowserRouterProps, createBrowserRouter } from 'react-router-dom'
+import Layout from '@/components/Layout'
+const AppRoutes: BrowserRouterProps = createBrowserRouter([
+  {
+    path: '/',
+    element: <Landing />
+  },
+  {
+    path: '/register',
+    element: <Registration />
+  },
+  {
+    path: '/dashboard',
+    element: <Layout />,
+    children: [
+      {
+        path: '/dashboard',
+        element: <Home />
+      },
+      {
+        path: '/dashboard/home',
+        element: <Home />
+      },
+      {
+        path: '/dashboard/my-tags',
+        element: <MyTags />
+      }
+    ]
+  },
+  
+])
 
-const AppRoutes = () => {
-  return (
-    <Routes>
-      <Route path="/" element={<Landing />} />
-      <Route path="/home" element={<Home />} />
-      <Route path="/register" element={<Registration />} />
-      <Route path="/my-tags" element={<MyTags />} />
-      <Route path="*" element={<Landing />} />
-    </Routes>
-  )
-}
 
 export default AppRoutes
