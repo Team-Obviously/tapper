@@ -3,5 +3,5 @@ import { createUser, getUser } from '../controllers/userController';
 
 export const userRouter = Router();
 
-userRouter.post('/', createUser);
+userRouter.post('/create-user', createUser);
 userRouter.get('/:userId', getUser);

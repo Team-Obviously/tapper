@@ -3,24 +3,72 @@ import { db } from '../db';
 import { users } from '../schema';
 import { eq } from 'drizzle-orm';
 import { createInsertSchema } from 'drizzle-zod';
+import { z } from 'zod';
 
-const insertUserSchema = createInsertSchema(users);
+// Define validation schema for user creation
+const createUserSchema = z.object({
+    // Basic Information
+    firstName: z.string().min(1, 'First name is required'),
+    lastName: z.string().min(1, 'Last name is required'),
+    email: z.string().email('Invalid email address'),
+    phone: z.string().optional(),
+    dateOfBirth: z.string().optional(),
+    location: z.string().optional(),
+    // Sports Information
+    interests: z.array(z.string()).optional(),
+    skillLevel: z.string().optional(),
+    availability: z.string().optional(),
+    // Work Information
+    company: z.string().optional(),
+    position: z.string().optional(),
+    experience: z.string().optional(),
+    isHiring: z.boolean().optional(),
+    resumeUrl: z.string().optional(),
+});
 
 export async function createUser(req: Request, res: Response) {
-    const parsed = insertUserSchema.safeParse(req.body);
+    console.log('CREATE USERreq.body', req.body);
+    const parsed = createUserSchema.safeParse(req.body);
+    console.log('parsed', parsed);
     if (!parsed.success) {
-        return res.status(400).json({ error: 'Invalid payload', details: parsed.error.flatten() });
+        return res.status(400).json({
+            error: 'Invalid payload',
+            details: parsed.error.flatten()
+        });
     }
 
     try {
+        // Convert isHiring boolean to string for database storage
+        const userData = {
+            ...parsed.data,
+            isHiring: parsed.data.isHiring ? 'true' : 'false'
+        };
+
         const [inserted] = await db
             .insert(users)
-            .values(parsed.data)
+            .values(userData)
             .returning();
 
-        return res.status(201).json(inserted);
-    } catch (error) {
-        return res.status(500).json({ error: 'Failed to create user' });
+        return res.status(201).json({
+            success: true,
+            user: inserted,
+            message: 'User created successfully'
+        });
+    } catch (error: any) {
+        console.error('Error creating user:', error);
+
+        // Handle unique constraint violation
+        if (error.code === '23505' && error.constraint === 'users_email_key') {
+            return res.status(400).json({
+                error: 'Email already exists',
+                message: 'A user with this email address already exists'
+            });
+        }
+
+        return res.status(500).json({
+            error: 'Failed to create user',
+            message: 'Internal server error'
+        });
     }
 }
 
@@ -31,7 +79,7 @@ export async function getUser(req: Request, res: Response) {
         const [user] = await db
             .select()
             .from(users)
-            .where(eq(users.id, userId))
+            .where(eq(users.id, userId!))
             .limit(1);
 
         if (!user) {

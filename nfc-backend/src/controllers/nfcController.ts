@@ -64,7 +64,7 @@ export async function getUserNfcs(req: Request, res: Response) {
 export async function connectNfc(req: Request, res: Response) {
     const { fromUserId, toNfcId, fromNfcId } = req.body;
 
-    if (!fromUserId || !toNfcId || !fromNfcId) {
+    if (!fromUserId || !toNfcId) {
         return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -80,7 +80,14 @@ export async function connectNfc(req: Request, res: Response) {
             return res.status(404).json({ error: 'NFC not found' });
         }
 
-        // Verify the fromNfcId belongs to fromUserId
+        // // Verify the fromNfcId belongs to fromUserId
+        // const [fromNfc] = await db
+        //     .select()
+        //     .from(userNfcs)
+        //     .where(eq(userNfcs.nfcId, fromNfcId))
+        //     .limit(1);
+
+        // get the fromNfcId from the userNfcs table for fromUserId
         const [fromNfc] = await db
             .select()
             .from(userNfcs)

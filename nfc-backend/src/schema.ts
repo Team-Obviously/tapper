@@ -4,7 +4,24 @@ import { relations } from 'drizzle-orm';
 export const users = pgTable('users', {
     id: uuid('id').defaultRandom().primaryKey(),
     email: text('email').unique().notNull(),
-    data: jsonb('data'), // profile data like name, bio, etc.
+    // Basic Information
+    firstName: text('first_name'),
+    lastName: text('last_name'),
+    phone: text('phone'),
+    dateOfBirth: text('date_of_birth'),
+    location: text('location'),
+    // Sports Information
+    interests: jsonb('interests'), // array of sports interests
+    skillLevel: text('skill_level'),
+    availability: text('availability'),
+    // Work Information
+    company: text('company'),
+    position: text('position'),
+    experience: text('experience'),
+    isHiring: text('is_hiring').default('false'), // boolean as text for simplicity
+    resumeUrl: text('resume_url'), // URL to uploaded resume file
+    // Additional data for future use
+    data: jsonb('data'), // additional profile data
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 

@@ -1,12 +1,15 @@
 import 'dotenv/config';
 import express from 'express';
-import { json } from 'express';
+import cors from 'cors';
+import { json, urlencoded } from 'express';
 import { nfcRouter } from './routers/nfcRouter';
 import { userRouter } from './routers/userRouter';
 import { requestLogger } from './middleware/requestLogger';
 
 const app = express();
-app.use(json({ limit: '1mb' }));
+app.use(cors());
+app.use(json()); // Parse JSON request bodies
+app.use(urlencoded({ extended: true })); // Parse URL-encoded request bodies
 app.use(requestLogger);
 
 app.get('/healthz', (_req, res) => {
