@@ -49,7 +49,7 @@ export const connections = pgTable(
     {
         id: uuid('id').defaultRandom().primaryKey(),
         fromUserId: uuid('from_user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-        toUserId: uuid('to_user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+        toUserId: uuid('to_user_id').references(() => users.id, { onDelete: 'cascade' }),
         fromNfcId: text('from_nfc_id').notNull(), // NFC that was tapped
         toNfcId: text('to_nfc_id').notNull(), // NFC that was scanned
         data: jsonb('data'), // connection metadata

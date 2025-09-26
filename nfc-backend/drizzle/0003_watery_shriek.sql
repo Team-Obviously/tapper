@@ -1,0 +1,1 @@
+ALTER TABLE "connections" ALTER COLUMN "to_user_id" DROP NOT NULL;

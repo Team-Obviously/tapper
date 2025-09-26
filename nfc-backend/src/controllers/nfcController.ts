@@ -15,7 +15,7 @@ async function updatePendingConnections(nfcId: string, userId: string) {
 
         // Update all pending connections to point to the actual user
         for (const connection of pendingConnections) {
-            if (connection.toUserId === 'unknown_user') {
+            if (connection.toUserId === null) {
                 await db
                     .update(connections)
                     .set({
@@ -124,7 +124,7 @@ export async function connectNfc(req: Request, res: Response) {
             // NFC doesn't exist in database yet - this is a new/unknown NFC
             // We'll create a placeholder connection that can be updated later
             // when the actual user registers this NFC
-            toUserId = 'unknown_user'; // Placeholder for unknown users
+            toUserId = null; // null for unknown users
         }
 
         // Create connection (even if the target user is unknown)
