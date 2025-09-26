@@ -131,3 +131,42 @@ export async function getUserConnections(req: Request, res: Response) {
         return res.status(500).json({ error: 'Failed to get connections' });
     }
 }
+
+// Toggle NFC status
+export async function toggleNfcStatus(req: Request, res: Response) {
+    const { nfcId } = req.params;
+    const { isActive } = req.body;
+
+    if (typeof isActive !== 'boolean') {
+        return res.status(400).json({ error: 'isActive must be a boolean value' });
+    }
+
+    try {
+        // Check if NFC exists
+        const [existingNfc] = await db
+            .select()
+            .from(userNfcs)
+            .where(eq(userNfcs.nfcId, nfcId))
+            .limit(1);
+
+        if (!existingNfc) {
+            return res.status(404).json({ error: 'NFC not found' });
+        }
+
+        // Update the NFC status
+        const [updated] = await db
+            .update(userNfcs)
+            .set({ isActive: isActive.toString() })
+            .where(eq(userNfcs.nfcId, nfcId))
+            .returning();
+
+        return res.status(200).json({
+            success: true,
+            nfc: updated,
+            message: `NFC ${isActive ? 'activated' : 'deactivated'} successfully`
+        });
+    } catch (error) {
+        console.error('Error toggling NFC status:', error);
+        return res.status(500).json({ error: 'Failed to toggle NFC status' });
+    }
+}

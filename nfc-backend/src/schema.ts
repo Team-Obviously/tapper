@@ -33,6 +33,7 @@ export const userNfcs = pgTable(
         nfcId: text('nfc_id').notNull(), // the actual NFC tag ID
         name: text('name'), // user's name for this NFC
         data: jsonb('data'), // additional NFC data
+        isActive: text('is_active').default('true').notNull(), // NFC tag status (true/false)
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     },
     (table) => ({
