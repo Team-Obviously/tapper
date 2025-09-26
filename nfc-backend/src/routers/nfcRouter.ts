@@ -1,8 +1,18 @@
 import { Router } from 'express';
-import { createNfc } from '../controllers/nfcController';
+import { registerNfc, getUserNfcs, connectNfc, getUserConnections } from '../controllers/nfcController';
 
 export const nfcRouter = Router();
 
-nfcRouter.post('/', createNfc);
+// Register user's own NFC
+nfcRouter.post('/register', registerNfc);
+
+// Get user's NFCs
+nfcRouter.get('/user/:userId', getUserNfcs);
+
+// Connect with someone else's NFC
+nfcRouter.post('/connect', connectNfc);
+
+// Get user's connections
+nfcRouter.get('/connections/:userId', getUserConnections);
 
 
