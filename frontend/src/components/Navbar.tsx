@@ -4,15 +4,15 @@ import {
   Home,
   Tag,
   User,
-  Settings,
   LogOut,
+  Search
 } from 'lucide-react'
 
 const navigationItems = [
   { name: 'Home', href: '/', icon: Home },
-  { name: 'My Tags', href: '/my-tags', icon: Tag },
-  { name: 'Profile', href: '/profile', icon: User },
-  { name: 'Settings', href: '/settings', icon: Settings },
+  { name: 'My Tags', href: '/dashboard/my-tags', icon: Tag },
+  { name: 'Profile', href: '/dashboard/profile', icon: User },
+  { name: 'Explore', href: '/dashboard/explore', icon: Search },
 ]
 
 export default function Navbar() {

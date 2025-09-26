@@ -20,6 +20,8 @@ import {
   Loader2,
 } from 'lucide-react'
 import { postRequest } from '../utility/generalServices'
+import { toast } from 'sonner'
+import { useNavigate } from 'react-router-dom'
 
 interface BasicInfo {
   firstName: string
@@ -92,6 +94,7 @@ const experienceLevels = [
 ]
 
 export default function Registration() {
+  const router = useNavigate()
   const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -189,8 +192,25 @@ export default function Registration() {
 
       if (response.status === 201) {
         console.log('Registration successful:', response.data)
-        alert('Registration completed successfully!')
-        // Reset form or redirect
+
+        // Store user data in localStorage
+        const userData = {
+          id: response.data.user.id,
+          email: response.data.user.email,
+          firstName: response.data.user.firstName,
+          lastName: response.data.user.lastName,
+          isLoggedIn: true,
+          loginTime: new Date().toISOString()
+        }
+
+        localStorage.setItem('user', JSON.stringify(userData))
+        localStorage.setItem('jwt', 'dummy-jwt-token') // You can implement proper JWT later
+
+        toast.success('Registration successful')
+        router('/dashboard/home')
+
+
+          // Reset form
         setCurrentStep(1)
         setBasicInfo({
           firstName: '',
