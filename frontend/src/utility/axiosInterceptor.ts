@@ -16,6 +16,11 @@ axiosInstance.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`
     }
 
+    // Ensure Content-Type is set for JSON requests
+    if (config.data && typeof config.data === 'object') {
+      config.headers['Content-Type'] = 'application/json'
+    }
+
     return config
   },
   (error) => {

@@ -3,13 +3,10 @@ import { Button } from '../components/ui/button'
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from '../components/ui/card'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
-import { Textarea } from '../components/ui/textarea'
 import { Checkbox } from '../components/ui/checkbox'
 import { RadioGroup, RadioGroupItem } from '../components/ui/radio-group'
 import { Progress } from '../components/ui/progress'
@@ -20,7 +17,9 @@ import {
   User,
   Gamepad2,
   Briefcase,
+  Loader2,
 } from 'lucide-react'
+import { postRequest } from '../utility/generalServices'
 
 interface BasicInfo {
   firstName: string
@@ -94,6 +93,8 @@ const experienceLevels = [
 
 export default function Registration() {
   const [currentStep, setCurrentStep] = useState(1)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const [basicInfo, setBasicInfo] = useState<BasicInfo>({
     firstName: '',
     lastName: '',
@@ -155,10 +156,75 @@ export default function Registration() {
     }
   }
 
-  const handleSubmit = () => {
-    console.log('Registration data:', { basicInfo, sportsInfo, workInfo })
-    // Handle form submission here
-    alert('Registration completed!')
+  const handleSubmit = async () => {
+    setIsSubmitting(true)
+    setSubmitError(null)
+
+    try {
+      // Prepare the data for API submission
+      const registrationData = {
+        // Basic Information
+        firstName: basicInfo.firstName,
+        lastName: basicInfo.lastName,
+        email: basicInfo.email,
+        phone: basicInfo.phone || undefined,
+        dateOfBirth: basicInfo.dateOfBirth || undefined,
+        location: basicInfo.location || undefined,
+        // Sports Information
+        interests: sportsInfo.interests.length > 0 ? sportsInfo.interests : undefined,
+        skillLevel: sportsInfo.skillLevel || undefined,
+        availability: sportsInfo.availability || undefined,
+        // Work Information
+        company: workInfo.company || undefined,
+        position: workInfo.position || undefined,
+        experience: workInfo.experience || undefined,
+        isHiring: workInfo.isHiring,
+        resumeUrl: workInfo.resume ? URL.createObjectURL(workInfo.resume) : undefined,
+      }
+
+      console.log('Submitting registration data:', registrationData)
+
+      // Call the API
+      const response = await postRequest('/users/create-user', registrationData)
+
+      if (response.status === 201) {
+        console.log('Registration successful:', response.data)
+        alert('Registration completed successfully!')
+        // Reset form or redirect
+        setCurrentStep(1)
+        setBasicInfo({
+          firstName: '',
+          lastName: '',
+          email: '',
+          phone: '',
+          dateOfBirth: '',
+          location: '',
+        })
+        setSportsInfo({
+          interests: [],
+          skillLevel: '',
+          availability: '',
+        })
+        setWorkInfo({
+          resume: null,
+          isHiring: false,
+          company: '',
+          position: '',
+          experience: '',
+        })
+      } else {
+        throw new Error(response.data?.message || 'Registration failed')
+      }
+    } catch (error: any) {
+      console.error('Registration error:', error)
+      setSubmitError(
+        error.response?.data?.message ||
+        error.message ||
+        'Registration failed. Please try again.'
+      )
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const isStepValid = () => {
@@ -497,11 +563,17 @@ export default function Registration() {
           <CardContent className="space-y-6">
             {renderStepContent()}
 
+            {submitError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p className="text-red-600 text-sm">{submitError}</p>
+              </div>
+            )}
+
             <div className="flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-3 sm:justify-between pt-6">
               <Button
                 variant="outline"
                 onClick={prevStep}
-                disabled={currentStep === 1}
+                disabled={currentStep === 1 || isSubmitting}
                 className="w-full sm:w-auto"
               >
                 <ChevronLeft className="w-4 h-4 mr-2" />
@@ -511,15 +583,22 @@ export default function Registration() {
               {currentStep === totalSteps ? (
                 <Button
                   onClick={handleSubmit}
-                  disabled={!isStepValid()}
+                  disabled={!isStepValid() || isSubmitting}
                   className="w-full sm:w-auto"
                 >
-                  Complete Registration
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Creating Account...
+                    </>
+                  ) : (
+                    'Complete Registration'
+                  )}
                 </Button>
               ) : (
                 <Button
                   onClick={nextStep}
-                  disabled={!isStepValid()}
+                  disabled={!isStepValid() || isSubmitting}
                   className="w-full sm:w-auto"
                 >
                   Next
