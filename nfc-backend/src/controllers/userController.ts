@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { db } from '../db';
 import { users } from '../schema';
-import { eq, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
@@ -12,7 +12,6 @@ const createUserSchema = z.object({
     lastName: z.string().min(1, 'Last name is required'),
     email: z.string().email('Invalid email address'),
     phone: z.string().optional(),
-    dateOfBirth: z.string().optional(),
     location: z.string().optional(),
     // Sports Information
     interests: z.array(z.string()).optional(),
@@ -128,55 +127,14 @@ export async function updateUser(req: Request, res: Response) {
             processedData.isHiring = processedData.isHiring.toString();
         }
 
-        // Handle dateOfBirth separately
-        let dateOfBirthValue = null;
-        if (updateData.dateOfBirth && typeof updateData.dateOfBirth === 'string') {
-            // Validate the date format
-            const date = new Date(updateData.dateOfBirth);
-            if (!isNaN(date.getTime())) {
-                // Valid date, keep as string in YYYY-MM-DD format
-                dateOfBirthValue = date.toISOString().split('T')[0];
-            }
-        }
-
         console.log('Processed data for update:', processedData);
-        console.log('Date of birth value:', dateOfBirthValue);
 
         // Update user data
-        let updatedUser;
-        if (Object.keys(processedData).length > 0) {
-            [updatedUser] = await db
-                .update(users)
-                .set(processedData)
-                .where(eq(users.id, userId!))
-                .returning();
-        } else {
-            // If no other fields to update, just get the current user
-            [updatedUser] = await db
-                .select()
-                .from(users)
-                .where(eq(users.id, userId!))
-                .limit(1);
-        }
-
-        // Handle dateOfBirth separately if it was provided
-        if (dateOfBirthValue !== null) {
-            try {
-                // Use raw SQL to update dateOfBirth to avoid Drizzle ORM issues
-                await db.execute(sql`UPDATE users SET date_of_birth = ${dateOfBirthValue} WHERE id = ${userId}`);
-                console.log('Date of birth updated successfully');
-            } catch (dateError) {
-                console.error('Error updating date of birth:', dateError);
-                // Don't fail the entire update if dateOfBirth fails
-            }
-
-            // Get the updated user with the new dateOfBirth
-            [updatedUser] = await db
-                .select()
-                .from(users)
-                .where(eq(users.id, userId!))
-                .limit(1);
-        }
+        const [updatedUser] = await db
+            .update(users)
+            .set(processedData)
+            .where(eq(users.id, userId!))
+            .returning();
 
         return res.status(200).json({
             success: true,

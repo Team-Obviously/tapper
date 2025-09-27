@@ -8,7 +8,6 @@ export const users = pgTable('users', {
     firstName: text('first_name'),
     lastName: text('last_name'),
     phone: text('phone'),
-    dateOfBirth: text('date_of_birth'),
     location: text('location'),
     // Sports Information
     interests: jsonb('interests'), // array of sports interests
