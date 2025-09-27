@@ -20,7 +20,8 @@ import {
   CheckCircle,
   ExternalLink,
   Tag,
-  User
+  User,
+  Bell
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -999,7 +1000,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4 max-w-4xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
             <Card
               className="hover:bg-muted/50 transition-all cursor-pointer"
               onClick={() => navigate('/dashboard/explore')}
@@ -1011,6 +1012,21 @@ export default function Home() {
                 <div>
                   <h4 className="font-medium text-sm">Explore People</h4>
                   <p className="text-xs text-muted-foreground">Discover new connections</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card
+              className="hover:bg-muted/50 transition-all cursor-pointer"
+              onClick={() => navigate('/dashboard/notifications')}
+            >
+              <CardContent className="p-4 flex items-center">
+                <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mr-3">
+                  <Bell className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-sm">Notifications</h4>
+                  <p className="text-xs text-muted-foreground">Handle connection requests</p>
                 </div>
               </CardContent>
             </Card>

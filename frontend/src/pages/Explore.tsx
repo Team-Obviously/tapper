@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import {
     Card,
     CardContent,
@@ -18,7 +19,8 @@ import {
     Clock,
     Bell,
     CheckCircle,
-    XCircle
+    XCircle,
+    ExternalLink
 } from 'lucide-react'
 import NfcDetector from '../components/NfcDetector'
 import { postRequest, getRequest } from '../utility/generalServices'
@@ -289,9 +291,17 @@ export default function Explore() {
             <div className="max-w-6xl mx-auto">
                 {/* Header */}
                 <div className="mb-8">
-                    <div className="flex items-center space-x-3 mb-4">
-                        <Search className="w-8 h-8 text-primary" />
-                        <h1 className="text-3xl font-bold md:text-4xl">Explore</h1>
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center space-x-3">
+                            <Search className="w-8 h-8 text-primary" />
+                            <h1 className="text-3xl font-bold md:text-4xl">Explore</h1>
+                        </div>
+
+                        <Link to="/dashboard/notifications" className="flex items-center space-x-2 text-primary hover:text-primary/80 transition-colors">
+                            <Bell className="w-5 h-5" />
+                            <span className="font-medium">Notifications</span>
+                            <ExternalLink className="w-4 h-4" />
+                        </Link>
                     </div>
                     <p className="text-muted-foreground">
                         Scan other users' NFC tags to connect and network
@@ -399,7 +409,7 @@ export default function Explore() {
                     </Card>
                 )}
 
-                
+
                 {/* Accepted Connections */}
                 <Card className="mb-8 border-green-200 bg-gradient-to-r from-green-50 to-teal-50">
                     <CardHeader>
