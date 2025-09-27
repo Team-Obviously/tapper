@@ -112,6 +112,20 @@ export async function updateUser(req: Request, res: Response) {
             processedData.isHiring = processedData.isHiring.toString();
         }
 
+        // Handle dateOfBirth - ensure it's a string and properly formatted
+        let dateOfBirthValue = null;
+        if (processedData.dateOfBirth) {
+            if (typeof processedData.dateOfBirth === 'string') {
+                // Validate the date format
+                const date = new Date(processedData.dateOfBirth);
+                if (!isNaN(date.getTime())) {
+                    // Valid date, keep as string in YYYY-MM-DD format
+                    dateOfBirthValue = date.toISOString().split('T')[0];
+                }
+            }
+            // Remove dateOfBirth from processedData to handle separately
+            delete processedData.dateOfBirth;
+        }
 
         // Remove any undefined or null values to avoid database issues
         Object.keys(processedData).forEach(key => {
@@ -120,12 +134,39 @@ export async function updateUser(req: Request, res: Response) {
             }
         });
 
+        console.log('Processed data for update:', processedData);
+
         // Update user data
-        const [updatedUser] = await db
-            .update(users)
-            .set(processedData)
-            .where(eq(users.id, userId!))
-            .returning();
+        let updatedUser;
+        if (Object.keys(processedData).length > 0) {
+            [updatedUser] = await db
+                .update(users)
+                .set(processedData)
+                .where(eq(users.id, userId!))
+                .returning();
+        } else {
+            // If no other fields to update, just get the current user
+            [updatedUser] = await db
+                .select()
+                .from(users)
+                .where(eq(users.id, userId!))
+                .limit(1);
+        }
+
+        // Handle dateOfBirth separately if it was provided
+        if (dateOfBirthValue !== null) {
+            await db
+                .update(users)
+                .set({ dateOfBirth: dateOfBirthValue })
+                .where(eq(users.id, userId!));
+
+            // Get the updated user with the new dateOfBirth
+            [updatedUser] = await db
+                .select()
+                .from(users)
+                .where(eq(users.id, userId!))
+                .limit(1);
+        }
 
         return res.status(200).json({
             success: true,
