@@ -15,7 +15,10 @@ import {
     Loader2,
     AlertCircle,
     Users,
-    Clock
+    Clock,
+    Bell,
+    CheckCircle,
+    XCircle
 } from 'lucide-react'
 import NfcDetector from '../components/NfcDetector'
 import { postRequest, getRequest } from '../utility/generalServices'
@@ -38,21 +41,88 @@ interface ScannedNfc {
     timestamp: string
 }
 
+interface Invitation {
+    id: string
+    fromUserId: string
+    toUserId: string
+    interest: string
+    message?: string
+    status: 'pending' | 'accepted' | 'rejected'
+    createdAt: string
+    fromUser?: {
+        firstName: string
+        lastName: string
+        email: string
+    }
+}
+
+interface AcceptedConnection {
+    id: string
+    userId1: string
+    userId2: string
+    sharedInterest: string
+    createdAt: string
+    otherUser?: {
+        firstName: string
+        lastName: string
+        email: string
+    }
+}
+
 export default function Explore() {
     const [showNfcDetector, setShowNfcDetector] = useState(false)
     const [, setScannedNfc] = useState<ScannedNfc | null>(null)
     const [connections, setConnections] = useState<Connection[]>([])
+    const [invitations, setInvitations] = useState<Invitation[]>([])
+    const [acceptedConnections, setAcceptedConnections] = useState<AcceptedConnection[]>([])
     const [isLoadingConnections, setIsLoadingConnections] = useState(false)
+    const [isLoadingInvitations, setIsLoadingInvitations] = useState(false)
+    const [isLoadingAcceptedConnections, setIsLoadingAcceptedConnections] = useState(false)
     const [isConnecting, setIsConnecting] = useState(false)
+    const [isRespondingToInvitation, setIsRespondingToInvitation] = useState<string | null>(null)
     const [error, setError] = useState<string | null>(null)
 
-    // Load user's connections on component mount
+    // Load user's connections and invitations on component mount
     useEffect(() => {
         const user = getCurrentUser()
         if (user?.isLoggedIn) {
             loadConnections()
+            loadInvitations()
+            loadAcceptedConnections()
         }
     }, [])
+
+    // Function to load accepted connections
+    const loadAcceptedConnections = async () => {
+        const userId = getUserId()
+        if (!userId) {
+            setError('User not logged in')
+            return
+        }
+
+        console.log('🤝 Loading accepted connections for user:', userId)
+        setIsLoadingAcceptedConnections(true)
+        setError(null)
+
+        try {
+            const response = await getRequest(`/invitations/accepted/${userId}`)
+            console.log('🤝 Accepted connections response:', response)
+
+            if (response.status === 200) {
+                const connectionsData = Array.isArray(response.data?.data) ? response.data.data : []
+                console.log('🤝 Setting accepted connections:', connectionsData)
+                setAcceptedConnections(connectionsData)
+            } else {
+                console.error('❌ Failed to load accepted connections:', response)
+                setError('Failed to load accepted connections')
+            }
+        } catch (error) {
+            console.error('❌ Error loading accepted connections:', error)
+            setError('Failed to load accepted connections')
+        } finally {
+            setIsLoadingAcceptedConnections(false)
+        }
+    }
 
     const loadConnections = async () => {
         const userId = getUserId()
@@ -76,6 +146,69 @@ export default function Explore() {
             setError('Failed to load connections')
         } finally {
             setIsLoadingConnections(false)
+        }
+    }
+
+    const loadInvitations = async () => {
+        const userId = getUserId()
+        if (!userId) {
+            setError('User not logged in')
+            return
+        }
+
+        console.log('🔔 Loading pending invitations for user:', userId)
+        setIsLoadingInvitations(true)
+        setError(null)
+
+        try {
+            const response = await getRequest(`/invitations/pending/${userId}`)
+            console.log('🔔 Invitations response:', response)
+
+            if (response.status === 200) {
+                const invitationsData = Array.isArray(response.data?.data) ? response.data.data : []
+                console.log('🔔 Setting invitations:', invitationsData)
+                setInvitations(invitationsData)
+            } else {
+                console.error('❌ Failed to load invitations:', response)
+                setError('Failed to load invitations')
+            }
+        } catch (error) {
+            console.error('❌ Error loading invitations:', error)
+            setError('Failed to load invitations')
+        } finally {
+            setIsLoadingInvitations(false)
+        }
+    }
+
+    const respondToInvitation = async (invitationId: string, response: 'accepted' | 'rejected') => {
+        console.log(`🤝 Responding to invitation ${invitationId} with: ${response}`)
+        setIsRespondingToInvitation(invitationId)
+        setError(null)
+
+        try {
+            const result = await postRequest(`/invitations/respond/${invitationId}`, { response })
+            console.log('🤝 Response result:', result)
+
+            if (result.status === 200) {
+                console.log(`✅ Invitation ${response} successfully`)
+                toast.success(`Invitation ${response}!`)
+                // Remove the invitation from the list
+                setInvitations(prev => prev.filter(inv => inv.id !== invitationId))
+
+                // If accepted, refresh the accepted connections list
+                if (response === 'accepted') {
+                    loadAcceptedConnections()
+                }
+            } else {
+                console.error('❌ Failed to respond to invitation:', result)
+                throw new Error(result.data?.error || 'Failed to respond to invitation')
+            }
+        } catch (error: any) {
+            console.error('❌ Error responding to invitation:', error)
+            setError(error.message || 'Failed to respond to invitation')
+            toast.error(error.message || 'Failed to respond to invitation')
+        } finally {
+            setIsRespondingToInvitation(null)
         }
     }
 
@@ -149,7 +282,7 @@ export default function Explore() {
 
     const currentUser = getCurrentUser()
 
-    
+
 
     return (
         <div className="min-h-screen bg-background py-8 px-4">
@@ -164,7 +297,7 @@ export default function Explore() {
                         Scan other users' NFC tags to connect and network
                     </p>
                     <div className="mt-2 text-sm text-muted-foreground">
-                        Welcome, {currentUser.firstName}! Start exploring and connecting.
+                        Welcome, {currentUser?.firstName || 'User'}! Start exploring and connecting.
                     </div>
                 </div>
 
@@ -266,13 +399,189 @@ export default function Explore() {
                     </Card>
                 )}
 
-                {/* Connections History */}
+                {/* Invitations Notifications */}
+                <Card className="mb-8 border-orange-200 bg-gradient-to-r from-orange-50 to-yellow-50">
+                    <CardHeader>
+                        <CardTitle className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                                <Bell className="w-5 h-5 text-orange-600" />
+                                <span>Connection Invitations ({invitations.length})</span>
+                            </div>
+                            <Button
+                                onClick={loadInvitations}
+                                disabled={isLoadingInvitations}
+                                size="sm"
+                                variant="outline"
+                            >
+                                {isLoadingInvitations ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    'Refresh'
+                                )}
+                            </Button>
+                        </CardTitle>
+                        <CardDescription>
+                            People who want to connect with you based on shared interests
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {isLoadingInvitations ? (
+                            <div className="flex items-center justify-center py-8">
+                                <Loader2 className="w-6 h-6 animate-spin text-orange-600" />
+                                <span className="ml-2 text-orange-600">Loading invitations...</span>
+                            </div>
+                        ) : invitations.length === 0 ? (
+                            <div className="text-center py-8">
+                                <Bell className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                                <h3 className="text-lg font-medium mb-2">No pending invitations</h3>
+                                <p className="text-muted-foreground">
+                                    You'll see connection requests here when people send them
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                {invitations.map((invitation) => (
+                                    <Card key={invitation.id} className="border-orange-200 bg-orange-50">
+                                        <CardContent className="p-4">
+                                            <div className="space-y-3">
+                                                <div className="flex items-center justify-between">
+                                                    <h4 className="font-medium text-orange-800">
+                                                        {invitation.fromUser?.firstName} {invitation.fromUser?.lastName}
+                                                    </h4>
+                                                    <Badge variant="secondary" className="text-xs">
+                                                        {new Date(invitation.createdAt).toLocaleDateString()}
+                                                    </Badge>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <p className="text-sm text-orange-700">
+                                                        <strong>Interest:</strong> {invitation.interest}
+                                                    </p>
+                                                    {invitation.message && (
+                                                        <p className="text-sm text-orange-600 italic">
+                                                            "{invitation.message}"
+                                                        </p>
+                                                    )}
+                                                </div>
+                                                <div className="flex space-x-2">
+                                                    <Button
+                                                        onClick={() => respondToInvitation(invitation.id, 'accepted')}
+                                                        disabled={isRespondingToInvitation === invitation.id}
+                                                        size="sm"
+                                                        className="bg-green-600 hover:bg-green-700"
+                                                    >
+                                                        {isRespondingToInvitation === invitation.id ? (
+                                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                                        ) : (
+                                                            <>
+                                                                <CheckCircle className="w-4 h-4 mr-1" />
+                                                                Accept
+                                                            </>
+                                                        )}
+                                                    </Button>
+                                                    <Button
+                                                        onClick={() => respondToInvitation(invitation.id, 'rejected')}
+                                                        disabled={isRespondingToInvitation === invitation.id}
+                                                        size="sm"
+                                                        variant="outline"
+                                                        className="border-red-300 text-red-600 hover:bg-red-50"
+                                                    >
+                                                        {isRespondingToInvitation === invitation.id ? (
+                                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                                        ) : (
+                                                            <>
+                                                                <XCircle className="w-4 h-4 mr-1" />
+                                                                Decline
+                                                            </>
+                                                        )}
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
+                {/* Accepted Connections */}
+                <Card className="mb-8 border-green-200 bg-gradient-to-r from-green-50 to-teal-50">
+                    <CardHeader>
+                        <CardTitle className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                                <CheckCircle className="w-5 h-5 text-green-600" />
+                                <span>Your Accepted Connections ({acceptedConnections.length})</span>
+                            </div>
+                            <Button
+                                onClick={loadAcceptedConnections}
+                                disabled={isLoadingAcceptedConnections}
+                                size="sm"
+                                variant="outline"
+                            >
+                                {isLoadingAcceptedConnections ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    'Refresh'
+                                )}
+                            </Button>
+                        </CardTitle>
+                        <CardDescription>
+                            People you've connected with based on shared interests
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {isLoadingAcceptedConnections ? (
+                            <div className="flex items-center justify-center py-8">
+                                <Loader2 className="w-6 h-6 animate-spin text-green-600" />
+                                <span className="ml-2 text-green-600">Loading connections...</span>
+                            </div>
+                        ) : acceptedConnections.length === 0 ? (
+                            <div className="text-center py-8">
+                                <Users className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                                <h3 className="text-lg font-medium mb-2">No accepted connections yet</h3>
+                                <p className="text-muted-foreground">
+                                    Accept invitations to connect with people who share your interests
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                {acceptedConnections.map((connection) => (
+                                    <Card key={connection.id} className="border-green-200 bg-green-50">
+                                        <CardContent className="p-4">
+                                            <div className="space-y-3">
+                                                <div className="flex items-center justify-between">
+                                                    <h4 className="font-medium text-green-800">
+                                                        {connection.otherUser?.firstName} {connection.otherUser?.lastName}
+                                                    </h4>
+                                                    <Badge variant="secondary" className="text-xs">
+                                                        {new Date(connection.createdAt).toLocaleDateString()}
+                                                    </Badge>
+                                                </div>
+                                                <div className="flex items-center space-x-2 text-sm text-green-600">
+                                                    <span className="font-medium">Connected over:</span>
+                                                    <span className="bg-green-100 px-2 py-1 rounded text-green-700">
+                                                        {connection.sharedInterest}
+                                                    </span>
+                                                </div>
+                                                <p className="text-xs text-green-500">
+                                                    Email: {connection.otherUser?.email}
+                                                </p>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
+                {/* NFC Connections History */}
                 <Card className="mb-8">
                     <CardHeader>
                         <CardTitle className="flex items-center justify-between">
                             <div className="flex items-center space-x-2">
                                 <Users className="w-5 h-5" />
-                                <span>Your Connections ({connections.length})</span>
+                                <span>NFC Connections ({connections.length})</span>
                             </div>
                             <Button
                                 onClick={loadConnections}
@@ -288,7 +597,7 @@ export default function Explore() {
                             </Button>
                         </CardTitle>
                         <CardDescription>
-                            Your connection history with other users
+                            Your NFC tag scanning history with other users
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -300,7 +609,7 @@ export default function Explore() {
                         ) : connections.length === 0 ? (
                             <div className="text-center py-8">
                                 <Users className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                                <h3 className="text-lg font-medium mb-2">No connections yet</h3>
+                                <h3 className="text-lg font-medium mb-2">No NFC connections yet</h3>
                                 <p className="text-muted-foreground">
                                     Start scanning other users' NFC tags to make connections
                                 </p>
@@ -312,7 +621,7 @@ export default function Explore() {
                                         <CardContent className="p-4">
                                             <div className="space-y-3">
                                                 <div className="flex items-center justify-between">
-                                                    <h4 className="font-medium text-blue-800">Connection</h4>
+                                                    <h4 className="font-medium text-blue-800">NFC Connection</h4>
                                                     <Badge variant="secondary" className="text-xs">
                                                         {new Date(connection.createdAt).toLocaleDateString()}
                                                     </Badge>
@@ -324,18 +633,6 @@ export default function Explore() {
                                                 <p className="text-xs text-blue-500">
                                                     NFC ID: {connection.toNfcId}
                                                 </p>
-                                                {/* {connection.data && (
-                                                    <div className="space-y-2">
-                                                        <p className="text-xs font-medium text-gray-600 uppercase tracking-wide">Data</p>
-                                                        <div className="bg-white rounded p-3 border">
-                                                            <div className="bg-gray-50 rounded p-2 max-h-24 overflow-y-auto">
-                                                                <pre className="text-xs text-gray-700 whitespace-pre-wrap break-words leading-relaxed">
-                                                                    {JSON.stringify(connection.data, null, 2)}
-                                                                </pre>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                )} */}
                                             </div>
                                         </CardContent>
                                     </Card>

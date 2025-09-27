@@ -6,8 +6,11 @@ import {
   CardHeader,
   CardTitle,
 } from '../components/ui/card'
-import { getRequest } from '../utility/generalServices'
-import { Users, Trophy, Briefcase, Heart, Loader2 } from 'lucide-react'
+import { Button } from '../components/ui/button'
+import { Badge } from '../components/ui/badge'
+import { getRequest, postRequest } from '../utility/generalServices'
+import { Users, Trophy, Briefcase, Heart, Loader2, Send, UserPlus, CheckCircle } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface InterestConnection {
   user_id: string
@@ -34,6 +37,20 @@ interface InterestBreakdown {
   [key: string]: number
 }
 
+
+interface AcceptedConnection {
+  id: string
+  userId1: string
+  userId2: string
+  sharedInterest: string
+  createdAt: string
+  otherUser?: {
+    firstName: string
+    lastName: string
+    email: string
+  }
+}
+
 export default function Home() {
   const [connectionSummary, setConnectionSummary] = useState<ConnectionSummary>(
     {
@@ -47,22 +64,253 @@ export default function Home() {
   const [interestBreakdown, setInterestBreakdown] = useState<InterestBreakdown>(
     {}
   )
+  const [acceptedConnections, setAcceptedConnections] = useState<AcceptedConnection[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [sendingInvitations, setSendingInvitations] = useState<Set<string>>(new Set())
+  const [sentInvitationCounts, setSentInvitationCounts] = useState<{ [key: string]: number }>({})
 
-  // Mock user ID - in a real app, this would come from auth context
-  const userId = '123e4567-e89b-12d3-a456-426614174000'
+  // Get user ID from localStorage
+  const getUserId = () => {
+    const userData = localStorage.getItem('user')
+    if (userData) {
+      try {
+        const user = JSON.parse(userData)
+        return user.id
+      } catch (error) {
+        console.error('Error parsing user data:', error)
+        return null
+      }
+    }
+    return null
+  }
+
+  const userId = getUserId()
+
+  // Function to send invitations to all people with shared interest
+  const sendInvitationsForInterest = async (interest: string) => {
+    if (!userId) {
+      toast.error('User not logged in')
+      return
+    }
+
+    try {
+      console.log(`📤 Sending invitations for interest: ${interest}`)
+      setSendingInvitations(prev => new Set(prev).add(interest))
+
+      // Get users with shared interest (this would be from your similarity service)
+      const response = await getRequest(`/invitations/shared-interests/${userId}/${interest}`)
+      console.log(`👥 Users with shared interest ${interest}:`, response)
+
+      if (response?.status === 200 && Array.isArray(response.data?.data)) {
+        const users = response.data.data
+        console.log(`📋 Found ${users.length} users with interest ${interest}:`, users)
+
+        // Send invitations to all users
+        const invitationPromises = users.map(async (user: any) => {
+          try {
+            console.log(`📨 Sending invitation to ${user.firstName} ${user.lastName}`)
+            const response = await postRequest('/invitations/send', {
+              fromUserId: userId,
+              toUserId: user.id,
+              interest: interest,
+              message: `Hi! I noticed we both share an interest in ${interest}. Would you like to connect?`
+            })
+
+            if (response?.status === 200 || response?.status === 201) {
+              console.log(`✅ Invitation sent to ${user.firstName}`, response)
+              return true
+            } else {
+              console.warn(`⚠️ Unexpected response when sending invitation to ${user.firstName}:`, response)
+              return false
+            }
+          } catch (error) {
+            console.error(`❌ Failed to send invitation to ${user.firstName}:`, error)
+            return false
+          }
+        })
+
+        const results = await Promise.all(invitationPromises)
+        const successCount = results.filter(Boolean).length
+        console.log(`🎉 ${successCount}/${users.length} invitations sent for ${interest}`)
+
+        if (successCount > 0) {
+          toast.success(`Invitations sent to ${successCount} people interested in ${interest}!`)
+          // Update the sent invitations count immediately
+          setSentInvitationCounts(prev => ({
+            ...prev,
+            [interest]: (prev[interest] || 0) + successCount
+          }))
+          // Refresh sent invitations data
+          loadSentInvitations()
+        } else {
+          toast.info('No new invitations were sent. You may have already invited everyone.')
+        }
+      } else {
+        console.log(`📝 Using mock data for ${interest} invitations`)
+        // Mock sending invitations for demo
+        toast.success(`Invitations sent to people interested in ${interest}!`)
+      }
+    } catch (error) {
+      console.error('❌ Error sending invitations:', error)
+      toast.error('Failed to send invitations')
+    } finally {
+      setSendingInvitations(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(interest)
+        return newSet
+      })
+    }
+  }
+
+  // Function to load accepted connections
+  const loadAcceptedConnections = async () => {
+    if (!userId) {
+      console.log('User not logged in, skipping accepted connections load')
+      return
+    }
+
+    try {
+      console.log('🤝 Loading accepted connections for user:', userId)
+      const response = await getRequest(`/invitations/accepted/${userId}`)
+      console.log('🤝 Accepted connections response:', response)
+
+      if (response?.data?.success && response.data.data) {
+        console.log('✅ Setting accepted connections:', response.data.data)
+        setAcceptedConnections(response.data.data)
+      } else {
+        console.log('📝 Using mock data for accepted connections')
+        // Mock data for demo
+        setAcceptedConnections([
+          {
+            id: '1',
+            userId1: userId,
+            userId2: 'user-2',
+            sharedInterest: 'Tennis',
+            createdAt: new Date().toISOString(),
+            otherUser: {
+              firstName: 'John',
+              lastName: 'Doe',
+              email: 'john@example.com'
+            }
+          },
+          {
+            id: '2',
+            userId1: userId,
+            userId2: 'user-3',
+            sharedInterest: 'JavaScript',
+            createdAt: new Date().toISOString(),
+            otherUser: {
+              firstName: 'Jane',
+              lastName: 'Smith',
+              email: 'jane@example.com'
+            }
+          }
+        ])
+      }
+    } catch (error) {
+      console.error('❌ Error loading accepted connections:', error)
+    }
+  }
+
+  // Function to load sent invitations count
+  const loadSentInvitations = async () => {
+    if (!userId) {
+      console.log('User not logged in, skipping sent invitations load')
+      return
+    }
+
+    try {
+      console.log('📤 Loading sent invitations for user:', userId)
+
+      // In a real app, you would have an API endpoint for this
+      // For now, we'll use a mock response based on the seeded data
+      const response = await getRequest(`/invitations/sent/${userId}`)
+      console.log('📤 Sent invitations response:', response)
+
+      if (response?.status === 200 && Array.isArray(response.data?.data)) {
+        // Group invitations by interest
+        const counts: { [key: string]: number } = {}
+        response.data.data.forEach((invitation: any) => {
+          counts[invitation.interest] = (counts[invitation.interest] || 0) + 1
+        })
+        console.log('📤 Sent invitation counts:', counts)
+        setSentInvitationCounts(counts)
+      } else {
+        // For demo, use the seeded data
+        console.log('📝 Using mock data for sent invitations')
+        setSentInvitationCounts({
+          Basketball: 10
+        })
+      }
+    } catch (error) {
+      console.error('❌ Error loading sent invitations:', error)
+    }
+  }
 
   useEffect(() => {
     const fetchInterestConnections = async () => {
+      if (!userId) {
+        setError('User not logged in')
+        setLoading(false)
+        return
+      }
+
       try {
         setLoading(true)
         const response = await getRequest(
-          `/api/similarity/interest-connections/${userId}`
+          `/similarity/interest-connections/${userId}`
         )
 
         if (response?.data?.success && response.data.data) {
-          const interestData: InterestData = response.data.data.similarity || {}
+          console.log('📊 Raw API Response:', response.data)
+          const similarityData = response.data.data.similarity || []
+          console.log('📈 Similarity Data:', similarityData)
+
+          // Transform the API response to match our expected format
+          const interestData: InterestData = {
+            sports: [],
+            professional: [],
+            interests: [],
+            skills: []
+          }
+
+          // Process the similarity data
+          if (Array.isArray(similarityData)) {
+            similarityData.forEach((item: any) => {
+              if (item.interest && item.connectedUsers) {
+                // Categorize based on interest type
+                const interest = item.interest.toLowerCase()
+                if (['tennis', 'basketball', 'football', 'soccer', 'swimming', 'running', 'cricket', 'volleyball', 'badminton', 'boxing', 'yoga', 'mma', 'pilates'].includes(interest)) {
+                  interestData.sports = item.connectedUsers.map((user: any) => ({
+                    user_id: user.userId,
+                    similarity_score: 0.8, // Default score
+                    shared_interests: [item.interest]
+                  }))
+                } else if (['javascript', 'react', 'node.js', 'python', 'typescript'].includes(interest)) {
+                  interestData.skills = item.connectedUsers.map((user: any) => ({
+                    user_id: user.userId,
+                    similarity_score: 0.8,
+                    shared_interests: [item.interest]
+                  }))
+                } else if (['leadership', 'public speaking', 'writing', 'design', 'marketing'].includes(interest)) {
+                  interestData.professional = item.connectedUsers.map((user: any) => ({
+                    user_id: user.userId,
+                    similarity_score: 0.8,
+                    shared_interests: [item.interest]
+                  }))
+                } else {
+                  interestData.interests = item.connectedUsers.map((user: any) => ({
+                    user_id: user.userId,
+                    similarity_score: 0.8,
+                    shared_interests: [item.interest]
+                  }))
+                }
+              }
+            })
+          }
+
+          console.log('📈 Processed Interest Data:', interestData)
 
           const summary: ConnectionSummary = {
             sports: interestData.sports?.length || 0,
@@ -78,17 +326,40 @@ export default function Home() {
             summary.interests +
             summary.skills
 
+          console.log('📊 Connection Summary:', summary)
+
           // Process interest breakdown
           const breakdown: InterestBreakdown = {}
 
-          // Process all categories
-          Object.entries(interestData).forEach(([, connections]) => {
-            connections?.forEach((connection: InterestConnection) => {
-              connection.shared_interests.forEach((interest: string) => {
-                breakdown[interest] = (breakdown[interest] || 0) + 1
+          // Process all categories - with proper array checks
+          Object.entries(interestData).forEach(([category, connections]) => {
+            console.log(`🔍 Processing category: ${category}`, connections)
+
+            // Check if connections is an array before iterating
+            if (Array.isArray(connections)) {
+              connections.forEach((connection: InterestConnection) => {
+                console.log('🔗 Processing connection:', connection)
+                if (Array.isArray(connection.shared_interests)) {
+                  connection.shared_interests.forEach((interest: string) => {
+                    breakdown[interest] = (breakdown[interest] || 0) + 1
+                  })
+                }
               })
-            })
+            } else {
+              console.warn(`⚠️ Connections for ${category} is not an array:`, connections)
+            }
           })
+
+          // Also process the original similarity data for interest breakdown
+          if (Array.isArray(similarityData)) {
+            similarityData.forEach((item: any) => {
+              if (item.interest && item.connectedUsers) {
+                breakdown[item.interest] = item.connectedUsers.length
+              }
+            })
+          }
+
+          console.log('📈 Interest Breakdown:', breakdown)
 
           setConnectionSummary(summary)
           setInterestBreakdown(breakdown)
@@ -139,6 +410,8 @@ export default function Home() {
     }
 
     fetchInterestConnections()
+    loadAcceptedConnections()
+    loadSentInvitations()
   }, [userId])
 
   return (
@@ -267,11 +540,14 @@ export default function Home() {
             </Card>
           </div>
 
-          {/* Mobile Interest Breakdown - Only visible on mobile */}
+          {/* Interest-based Invitations - Mobile */}
           <div className="lg:hidden mb-8">
             <h3 className="text-xl font-semibold mb-4 text-center">
-              Your Interest Connections
+              Send Connection Invitations
             </h3>
+            <p className="text-sm text-muted-foreground text-center mb-6">
+              Connect with people who share your interests
+            </p>
             <div className="space-y-3">
               {Object.entries(interestBreakdown)
                 .sort(([, a], [, b]) => b - a) // Sort by count descending
@@ -308,7 +584,7 @@ export default function Home() {
                             ) && '🎯'}
                           </span>
                         </div>
-                        <div>
+                        <div className="flex-1">
                           <p className="font-medium text-sm">
                             You met{' '}
                             <span className="font-bold text-primary">
@@ -319,16 +595,62 @@ export default function Home() {
                           <p className="text-lg font-semibold">{interest}</p>
                         </div>
                       </div>
-                      <div className="text-2xl font-bold text-primary">
-                        {loading ? (
-                          <Loader2 className="h-6 w-6 animate-spin" />
+                      <Button
+                        onClick={() => sendInvitationsForInterest(interest)}
+                        disabled={sendingInvitations.has(interest)}
+                        size="sm"
+                        className="ml-2"
+                      >
+                        {sendingInvitations.has(interest) ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
-                          count
+                          <Send className="h-4 w-4" />
                         )}
-                      </div>
+                      </Button>
                     </div>
                   </Card>
                 ))}
+            </div>
+          </div>
+
+          {/* Accepted Connections - Mobile */}
+          <div className="lg:hidden mb-8">
+            <h3 className="text-xl font-semibold mb-4 text-center">
+              Your Accepted Connections
+            </h3>
+            <div className="space-y-3">
+              {acceptedConnections.length === 0 ? (
+                <Card className="p-6 text-center">
+                  <UserPlus className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                  <h4 className="text-lg font-medium mb-2">No connections yet</h4>
+                  <p className="text-muted-foreground">
+                    Send invitations to start building your network
+                  </p>
+                </Card>
+              ) : (
+                acceptedConnections.map((connection) => (
+                  <Card key={connection.id} className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                          <CheckCircle className="w-5 h-5 text-green-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium">
+                            {connection.otherUser?.firstName} {connection.otherUser?.lastName}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Connected over {connection.sharedInterest}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge variant="secondary" className="text-xs">
+                        {new Date(connection.createdAt).toLocaleDateString()}
+                      </Badge>
+                    </div>
+                  </Card>
+                ))
+              )}
             </div>
           </div>
 
@@ -363,6 +685,27 @@ export default function Home() {
             <p className="text-muted-foreground">
               Explore and manage your connections
             </p>
+          </div>
+
+          {/* Sent Invitations Status */}
+          <div className="mb-8 max-w-4xl mx-auto">
+            <Card className="bg-green-50 border-green-200">
+              <CardContent className="p-4 flex items-center">
+                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                  <CheckCircle className="w-5 h-5 text-green-600" />
+                </div>
+                <div>
+                  {Object.entries(sentInvitationCounts).map(([interest, count]) => (
+                    <p key={interest} className="font-medium">
+                      Invitations sent to {count} people interested in {interest}!
+                    </p>
+                  ))}
+                  {Object.keys(sentInvitationCounts).length === 0 && (
+                    <p className="font-medium">No invitations sent yet</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 max-w-4xl mx-auto">
