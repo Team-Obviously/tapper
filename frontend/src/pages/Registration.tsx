@@ -33,6 +33,10 @@ interface BasicInfo {
   email: string
   phone: string
   location: string
+  githubUsername: string
+  linkedinProfile: string
+  telegramUsername: string
+  discordUsername: string
 }
 
 interface SportsInfo {
@@ -116,6 +120,10 @@ export default function Registration() {
     email: '',
     phone: '',
     location: '',
+    githubUsername: '',
+    linkedinProfile: '',
+    telegramUsername: '',
+    discordUsername: '',
   })
   const [sportsInfo, setSportsInfo] = useState<SportsInfo>({
     interests: [],
@@ -228,6 +236,13 @@ export default function Registration() {
 
     try {
       // Prepare the data for API submission
+      const socialData = {
+        githubUsername: basicInfo.githubUsername || undefined,
+        linkedinProfile: basicInfo.linkedinProfile || undefined,
+        telegramUsername: basicInfo.telegramUsername || undefined,
+        discordUsername: basicInfo.discordUsername || undefined,
+      };
+
       const registrationData = {
         // Basic Information
         firstName: basicInfo.firstName,
@@ -235,6 +250,8 @@ export default function Registration() {
         email: basicInfo.email,
         phone: basicInfo.phone || undefined,
         location: basicInfo.location || undefined,
+        // Social Media Information (stored in data column)
+        data: JSON.stringify(socialData),
         // Sports Information
         interests: sportsInfo.interests.length > 0 ? sportsInfo.interests : undefined,
         skillLevel: sportsInfo.skillLevel || undefined,
@@ -281,6 +298,10 @@ export default function Registration() {
           email: '',
           phone: '',
           location: '',
+          githubUsername: '',
+          linkedinProfile: '',
+          telegramUsername: '',
+          discordUsername: '',
         })
         setSportsInfo({
           interests: [],
@@ -415,6 +436,63 @@ export default function Registration() {
                   placeholder="City, State"
                   className="text-base"
                 />
+              </div>
+            </div>
+
+            <div className="mt-8">
+              <h3 className="text-lg font-semibold mb-4">Social Media Profiles</h3>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="githubUsername">GitHub Username</Label>
+                  <Input
+                    id="githubUsername"
+                    value={basicInfo.githubUsername}
+                    onChange={(e) =>
+                      handleBasicInfoChange('githubUsername', e.target.value)
+                    }
+                    placeholder="username"
+                    className="text-base"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="linkedinProfile">LinkedIn Profile</Label>
+                  <Input
+                    id="linkedinProfile"
+                    value={basicInfo.linkedinProfile}
+                    onChange={(e) =>
+                      handleBasicInfoChange('linkedinProfile', e.target.value)
+                    }
+                    placeholder="linkedin.com/in/username"
+                    className="text-base"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="telegramUsername">Telegram Username</Label>
+                  <Input
+                    id="telegramUsername"
+                    value={basicInfo.telegramUsername}
+                    onChange={(e) =>
+                      handleBasicInfoChange('telegramUsername', e.target.value)
+                    }
+                    placeholder="@username"
+                    className="text-base"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="discordUsername">Discord Username</Label>
+                  <Input
+                    id="discordUsername"
+                    value={basicInfo.discordUsername}
+                    onChange={(e) =>
+                      handleBasicInfoChange('discordUsername', e.target.value)
+                    }
+                    placeholder="username#0000"
+                    className="text-base"
+                  />
+                </div>
               </div>
             </div>
           </div>
