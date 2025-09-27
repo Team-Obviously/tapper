@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { db } from '../db';
 import { users } from '../schema';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
@@ -97,6 +97,9 @@ export async function updateUser(req: Request, res: Response) {
     const { userId } = req.params;
     const updateData = req.body;
 
+    console.log('UPDATE USER - Raw request body:', JSON.stringify(req.body, null, 2));
+    console.log('UPDATE USER - User ID:', userId);
+
     try {
         // Check if user exists
         const [existingUser] = await db.select().from(users).where(eq(users.id, userId!));
@@ -104,37 +107,40 @@ export async function updateUser(req: Request, res: Response) {
             return res.status(404).json({ error: 'User not found' });
         }
 
-        // Process the update data
-        const processedData: any = { ...updateData };
+        // Process the update data - only allow specific fields to be updated
+        const allowedFields = [
+            'firstName', 'lastName', 'email', 'phone', 'location',
+            'interests', 'skillLevel', 'availability', 'company',
+            'position', 'experience', 'isHiring', 'resumeUrl'
+        ];
+
+        const processedData: any = {};
+
+        // Only include allowed fields
+        allowedFields.forEach(field => {
+            if (updateData[field] !== undefined && updateData[field] !== null && updateData[field] !== '') {
+                processedData[field] = updateData[field];
+            }
+        });
 
         // Convert isHiring boolean to string if present
         if (processedData.isHiring !== undefined) {
             processedData.isHiring = processedData.isHiring.toString();
         }
 
-        // Handle dateOfBirth - ensure it's a string and properly formatted
+        // Handle dateOfBirth separately
         let dateOfBirthValue = null;
-        if (processedData.dateOfBirth) {
-            if (typeof processedData.dateOfBirth === 'string') {
-                // Validate the date format
-                const date = new Date(processedData.dateOfBirth);
-                if (!isNaN(date.getTime())) {
-                    // Valid date, keep as string in YYYY-MM-DD format
-                    dateOfBirthValue = date.toISOString().split('T')[0];
-                }
+        if (updateData.dateOfBirth && typeof updateData.dateOfBirth === 'string') {
+            // Validate the date format
+            const date = new Date(updateData.dateOfBirth);
+            if (!isNaN(date.getTime())) {
+                // Valid date, keep as string in YYYY-MM-DD format
+                dateOfBirthValue = date.toISOString().split('T')[0];
             }
-            // Remove dateOfBirth from processedData to handle separately
-            delete processedData.dateOfBirth;
         }
 
-        // Remove any undefined or null values to avoid database issues
-        Object.keys(processedData).forEach(key => {
-            if (processedData[key] === undefined || processedData[key] === null || processedData[key] === '') {
-                delete processedData[key];
-            }
-        });
-
         console.log('Processed data for update:', processedData);
+        console.log('Date of birth value:', dateOfBirthValue);
 
         // Update user data
         let updatedUser;
@@ -155,10 +161,14 @@ export async function updateUser(req: Request, res: Response) {
 
         // Handle dateOfBirth separately if it was provided
         if (dateOfBirthValue !== null) {
-            await db
-                .update(users)
-                .set({ dateOfBirth: dateOfBirthValue })
-                .where(eq(users.id, userId!));
+            try {
+                // Use raw SQL to update dateOfBirth to avoid Drizzle ORM issues
+                await db.execute(sql`UPDATE users SET date_of_birth = ${dateOfBirthValue} WHERE id = ${userId}`);
+                console.log('Date of birth updated successfully');
+            } catch (dateError) {
+                console.error('Error updating date of birth:', dateError);
+                // Don't fail the entire update if dateOfBirth fails
+            }
 
             // Get the updated user with the new dateOfBirth
             [updatedUser] = await db
