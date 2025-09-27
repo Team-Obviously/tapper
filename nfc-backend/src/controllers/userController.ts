@@ -112,9 +112,17 @@ export async function updateUser(req: Request, res: Response) {
             processedData.isHiring = processedData.isHiring.toString();
         }
 
-        // Handle dateOfBirth - convert string to Date object if present
+        // Handle dateOfBirth - keep as string for database storage
         if (processedData.dateOfBirth && typeof processedData.dateOfBirth === 'string') {
-            processedData.dateOfBirth = new Date(processedData.dateOfBirth);
+            // Validate the date format and keep as string
+            const date = new Date(processedData.dateOfBirth);
+            if (isNaN(date.getTime())) {
+                // Invalid date, remove it
+                delete processedData.dateOfBirth;
+            } else {
+                // Valid date, keep as string in ISO format
+                processedData.dateOfBirth = date.toISOString().split('T')[0]; // Keep only YYYY-MM-DD part
+            }
         }
 
         // Remove any undefined or null values to avoid database issues

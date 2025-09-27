@@ -34,19 +34,6 @@ interface UserNfc {
   createdAt: string
 }
 
-const mockTags: Tag[] = [
-  { id: '1', name: 'Basketball', category: 'sport', color: 'bg-orange-500' },
-  { id: '2', name: 'Tennis', category: 'sport', color: 'bg-green-500' },
-  { id: '3', name: 'React', category: 'skill', color: 'bg-blue-500' },
-  {
-    id: '4',
-    name: 'Leadership',
-    category: 'professional',
-    color: 'bg-purple-500',
-  },
-  { id: '5', name: 'Photography', category: 'interest', color: 'bg-pink-500' },
-  { id: '6', name: 'Running', category: 'sport', color: 'bg-red-500' },
-]
 
 const categoryLabels = {
   sport: 'Sports',
@@ -59,7 +46,6 @@ export default function MyTags() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [showNfcDetector, setShowNfcDetector] = useState(false)
-  const [nfcData, setNfcData] = useState<any>(null)
   const [userNfcs, setUserNfcs] = useState<UserNfc[]>([])
   const [isLoadingNfcs, setIsLoadingNfcs] = useState(false)
   const [nfcError, setNfcError] = useState<string | null>(null)
@@ -78,7 +64,6 @@ export default function MyTags() {
 
 
   const handleNfcDetected = (data: any) => {
-    setNfcData(data)
     console.log('NFC Data detected:', data)
   }
 
@@ -134,7 +119,7 @@ export default function MyTags() {
       const nfcPayload = {
         userId: userId,
         nfcId: nfcId,
-        name: `NFC Tag ${new Date().toLocaleDateString()}`,
+        name: nfcData.name || `NFC Tag ${new Date().toLocaleDateString()}`,
         data: nfcData,
         isActive: 'true' // New NFC tags are active by default
       }
@@ -145,7 +130,6 @@ export default function MyTags() {
         console.log('NFC registered successfully:', response.data)
         // Reload user NFCs
         await loadUserNfcs()
-        setNfcData(null) // Clear the detected data
         toast.success('NFC tag registered successfully!')
       } else {
         console.log('Failed to register NFC tag:', response.data)
@@ -291,10 +275,10 @@ export default function MyTags() {
           <CardHeader>
             <CardTitle className="flex items-center space-x-2 text-blue-800">
               <Smartphone className="w-6 h-6" />
-              <span>NFC Tag Detection</span>
+              <span>NFC Scanner</span>
             </CardTitle>
             <CardDescription className="text-blue-600">
-              Detect and read data from your NFC tags or chips
+              Scan and register your NFC tags
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -303,9 +287,9 @@ export default function MyTags() {
                 <div className="flex items-center space-x-3 p-4 bg-blue-100 rounded-lg">
                   <Wifi className="w-5 h-5 text-blue-600" />
                   <div>
-                    <p className="font-medium text-blue-800">Ready to detect NFC tags</p>
+                    <p className="font-medium text-blue-800">Ready to scan</p>
                     <p className="text-sm text-blue-600">
-                      Click the button below to start NFC scanning
+                      Click below to start detection
                     </p>
                   </div>
                 </div>
@@ -315,79 +299,27 @@ export default function MyTags() {
                   size="lg"
                 >
                   <Smartphone className="w-4 h-4 mr-2" />
-                  Start NFC Detection
+                  Start Scanning
                 </Button>
               </div>
             ) : (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-blue-800">NFC Scanner</h3>
+                  <h3 className="text-lg font-semibold text-blue-800">Scanner</h3>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setShowNfcDetector(false)}
                   >
-                    Close Scanner
+                    Close
                   </Button>
                 </div>
                 <NfcDetector
                   onNfcDetected={handleNfcDetected}
                   onError={handleNfcError}
+                  onRegisterNfc={registerNfcTag}
+                  isRegistering={isRegisteringNfc}
                 />
-
-                {/* NFC Data Display - Integrated into the same card */}
-                {nfcData && (
-                  <div className="mt-6 p-4 bg-green-100 rounded-lg border border-green-200">
-                    <div className="flex items-center space-x-2 mb-3">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-sm font-medium text-green-800">NFC Detected!</span>
-                    </div>
-
-                    <div className="space-y-3">
-                      <div>
-                        <h4 className="font-medium text-green-800 mb-2 text-sm">Data received:</h4>
-                        <div className="bg-white rounded p-3 border max-h-32 overflow-y-auto">
-                          <pre className="text-xs text-green-700 whitespace-pre-wrap break-words">
-                            {JSON.stringify(nfcData, null, 2)}
-                          </pre>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
-                        <Button
-                          size="sm"
-                          onClick={() => setNfcData(null)}
-                          variant="outline"
-                          className="text-xs"
-                        >
-                          Clear Data
-                        </Button>
-                        <Button
-                          size="sm"
-                          onClick={() => setShowNfcDetector(true)}
-                          className="bg-blue-600 hover:bg-blue-700 text-xs"
-                        >
-                          Scan Again
-                        </Button>
-                        <Button
-                          size="sm"
-                          onClick={() => registerNfcTag(nfcData)}
-                          disabled={isRegisteringNfc}
-                          className="bg-green-600 hover:bg-green-700 text-xs"
-                        >
-                          {isRegisteringNfc ? (
-                            <>
-                              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                              Registering...
-                            </>
-                          ) : (
-                            'Register NFC Tag'
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             )}
           </CardContent>
@@ -468,11 +400,12 @@ export default function MyTags() {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="space-y-4">
                 {filteredNfcs.map((nfc) => (
                   <Card key={nfc.id} className={`${nfc.isActive === 'true' ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
                     <CardContent className="p-4">
-                      <div className="space-y-3">
+                      <div className="space-y-4">
+                        {/* Header with status and toggle */}
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-2">
                             <Power className={`w-4 h-4 ${nfc.isActive === 'true' ? 'text-green-600' : 'text-gray-400'}`} />
@@ -487,20 +420,6 @@ export default function MyTags() {
                             >
                               {nfc.isActive === 'true' ? 'Active' : 'Inactive'}
                             </Badge>
-                            <Badge variant="outline" className="text-xs">
-                              {new Date(nfc.createdAt).toLocaleDateString()}
-                            </Badge>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                          <p className={`text-sm ${nfc.isActive === 'true' ? 'text-green-600' : 'text-gray-500'}`}>
-                            ID: {nfc.nfcId}
-                          </p>
-                          <div className="flex items-center space-x-2">
-                            <Label htmlFor={`toggle-${nfc.id}`} className="text-sm font-medium">
-                              {nfc.isActive === 'true' ? 'Enabled' : 'Disabled'}
-                            </Label>
                             <Switch
                               id={`toggle-${nfc.id}`}
                               checked={nfc.isActive === 'true'}
@@ -511,6 +430,16 @@ export default function MyTags() {
                           </div>
                         </div>
 
+                        {/* NFC ID and date */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <p className={`text-sm ${nfc.isActive === 'true' ? 'text-green-600' : 'text-gray-500'}`}>
+                              ID: {nfc.nfcId}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Loading state */}
                         {togglingNfc === nfc.nfcId && (
                           <div className="flex items-center space-x-2 text-sm text-blue-600">
                             <Loader2 className="w-3 h-3 animate-spin" />
@@ -518,11 +447,17 @@ export default function MyTags() {
                           </div>
                         )}
 
+                        {/* Data display */}
                         {nfc.data && (
-                          <div className="bg-white rounded p-2 border">
-                            <pre className="text-xs text-gray-700 overflow-x-auto">
-                              {JSON.stringify(nfc.data, null, 2)}
-                            </pre>
+                          <div className="space-y-2">
+                            <p className="text-xs font-medium text-gray-600 uppercase tracking-wide">Data</p>
+                            <div className="bg-white rounded p-3 border">
+                              <div className="bg-gray-50 rounded p-2 max-h-24 overflow-y-auto">
+                                <pre className="text-xs text-gray-700 whitespace-pre-wrap break-words leading-relaxed">
+                                  {JSON.stringify(nfc.data, null, 2)}
+                                </pre>
+                              </div>
+                            </div>
                           </div>
                         )}
                       </div>

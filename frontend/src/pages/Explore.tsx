@@ -15,9 +15,7 @@ import {
     Loader2,
     AlertCircle,
     Users,
-    CheckCircle,
-    Clock,
-    UserPlus
+    Clock
 } from 'lucide-react'
 import NfcDetector from '../components/NfcDetector'
 import { postRequest, getRequest } from '../utility/generalServices'
@@ -42,7 +40,7 @@ interface ScannedNfc {
 
 export default function Explore() {
     const [showNfcDetector, setShowNfcDetector] = useState(false)
-    const [scannedNfc, setScannedNfc] = useState<ScannedNfc | null>(null)
+    const [, setScannedNfc] = useState<ScannedNfc | null>(null)
     const [connections, setConnections] = useState<Connection[]>([])
     const [isLoadingConnections, setIsLoadingConnections] = useState(false)
     const [isConnecting, setIsConnecting] = useState(false)
@@ -81,7 +79,7 @@ export default function Explore() {
         }
     }
 
-    const handleNfcDetected = (data: any) => {
+    const handleNfcDetected = async (data: any) => {
         const nfcData = {
             nfcId: `scanned_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             data: data,
@@ -89,6 +87,9 @@ export default function Explore() {
         }
         setScannedNfc(nfcData)
         console.log('NFC Data detected:', nfcData)
+
+        // Automatically trigger connection
+        await connectWithUser(nfcData)
     }
 
     const handleNfcError = (error: string) => {
@@ -123,6 +124,16 @@ export default function Explore() {
                 toast.success('Successfully connected with user!')
                 setScannedNfc(null) // Clear the scanned data
                 await loadConnections() // Reload connections
+
+                // Check if NFC data contains a URL and redirect to it
+                if (scannedNfcData.data && Array.isArray(scannedNfcData.data)) {
+                    const urlRecord = scannedNfcData.data.find((record: any) => record.type === 'url')
+                    if (urlRecord && urlRecord.data) {
+                        // Redirect to the URL from the NFC data
+                        window.open(urlRecord.data, '_blank')
+                        toast.success('Redirecting to the website...')
+                    }
+                }
             } else {
                 console.log('Failed to create connection:', response.data)
                 throw new Error(response.data?.error || 'Failed to create connection')
@@ -236,57 +247,22 @@ export default function Explore() {
                     </CardContent>
                 </Card>
 
-                {/* Scanned NFC Display */}
-                {scannedNfc && (
-                    <Card className="mb-8 border-green-200 bg-green-50">
+                {/* Connection Status Display */}
+                {isConnecting && (
+                    <Card className="mb-8 border-blue-200 bg-blue-50">
                         <CardHeader>
-                            <CardTitle className="flex items-center space-x-2 text-green-800">
-                                <CheckCircle className="w-5 h-5" />
-                                <span>NFC Tag Detected</span>
+                            <CardTitle className="flex items-center space-x-2 text-blue-800">
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                                <span>Connecting...</span>
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-3">
-                                <div className="bg-green-100 rounded-lg p-4">
-                                    <h4 className="font-medium text-green-800 mb-2">Connection Ready</h4>
-                                    <p className="text-sm text-green-700">
-                                        NFC tag detected successfully! You can now connect with this user.
-                                        The connection will be established even if the user hasn't registered yet.
+                                <div className="bg-blue-100 rounded-lg p-4">
+                                    <h4 className="font-medium text-blue-800 mb-2">Establishing Connection</h4>
+                                    <p className="text-sm text-blue-700">
+                                        Connecting with the user and processing the NFC data...
                                     </p>
-                                </div>
-                                <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
-                                    <Button
-                                        size="sm"
-                                        onClick={() => setScannedNfc(null)}
-                                        variant="outline"
-                                    >
-                                        Clear Data
-                                    </Button>
-                                    <Button
-                                        size="sm"
-                                        onClick={() => setShowNfcDetector(true)}
-                                        className="bg-blue-600 hover:bg-blue-700"
-                                    >
-                                        Scan Again
-                                    </Button>
-                                    <Button
-                                        size="sm"
-                                        onClick={() => connectWithUser(scannedNfc)}
-                                        disabled={isConnecting}
-                                        className="bg-green-600 hover:bg-green-700"
-                                    >
-                                        {isConnecting ? (
-                                            <>
-                                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                                Connecting...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <UserPlus className="w-4 h-4 mr-2" />
-                                                Connect with User
-                                            </>
-                                        )}
-                                    </Button>
                                 </div>
                             </div>
                         </CardContent>
@@ -356,11 +332,11 @@ export default function Explore() {
                                 </p>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            <div className="space-y-4">
                                 {connections.map((connection) => (
                                     <Card key={connection.id} className="border-blue-200 bg-blue-50">
                                         <CardContent className="p-4">
-                                            <div className="space-y-2">
+                                            <div className="space-y-3">
                                                 <div className="flex items-center justify-between">
                                                     <h4 className="font-medium text-blue-800">Connection</h4>
                                                     <Badge variant="secondary" className="text-xs">
@@ -374,13 +350,18 @@ export default function Explore() {
                                                 <p className="text-xs text-blue-500">
                                                     NFC ID: {connection.toNfcId}
                                                 </p>
-                                                {connection.data && (
-                                                    <div className="bg-white rounded p-2 border">
-                                                        <pre className="text-xs text-gray-700 overflow-x-auto">
-                                                            {JSON.stringify(connection.data, null, 2)}
-                                                        </pre>
+                                                {/* {connection.data && (
+                                                    <div className="space-y-2">
+                                                        <p className="text-xs font-medium text-gray-600 uppercase tracking-wide">Data</p>
+                                                        <div className="bg-white rounded p-3 border">
+                                                            <div className="bg-gray-50 rounded p-2 max-h-24 overflow-y-auto">
+                                                                <pre className="text-xs text-gray-700 whitespace-pre-wrap break-words leading-relaxed">
+                                                                    {JSON.stringify(connection.data, null, 2)}
+                                                                </pre>
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                )}
+                                                )} */}
                                             </div>
                                         </CardContent>
                                     </Card>
