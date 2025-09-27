@@ -3,7 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import { json, urlencoded } from 'express';
 import { nfcRouter } from './routers/nfcRouter';
-import { userRouter } from './routers/userRouter';
+import { userRouter } from './controllers/userRouter';
 import { requestLogger } from './middleware/requestLogger';
 
 const app = express();

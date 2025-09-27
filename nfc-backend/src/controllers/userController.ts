@@ -91,3 +91,38 @@ export async function getUser(req: Request, res: Response) {
         return res.status(500).json({ error: 'Failed to get user' });
     }
 }
+
+// Update user data
+export async function updateUser(req: Request, res: Response) {
+    const { userId } = req.params;
+    const updateData = req.body;
+
+    try {
+        // Check if user exists
+        const [existingUser] = await db.select().from(users).where(eq(users.id, userId!));
+        if (!existingUser) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Convert isHiring boolean to string if present
+        if (updateData.isHiring !== undefined) {
+            updateData.isHiring = updateData.isHiring.toString();
+        }
+
+        // Update user data
+        const [updatedUser] = await db
+            .update(users)
+            .set(updateData)
+            .where(eq(users.id, userId!))
+            .returning();
+
+        return res.status(200).json({
+            success: true,
+            user: updatedUser,
+            message: 'User updated successfully'
+        });
+    } catch (error) {
+        console.error('Error updating user:', error);
+        return res.status(500).json({ error: 'Failed to update user' });
+    }
+}
