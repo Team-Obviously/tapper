@@ -104,15 +104,30 @@ export async function updateUser(req: Request, res: Response) {
             return res.status(404).json({ error: 'User not found' });
         }
 
+        // Process the update data
+        const processedData: any = { ...updateData };
+
         // Convert isHiring boolean to string if present
-        if (updateData.isHiring !== undefined) {
-            updateData.isHiring = updateData.isHiring.toString();
+        if (processedData.isHiring !== undefined) {
+            processedData.isHiring = processedData.isHiring.toString();
         }
+
+        // Handle dateOfBirth - convert string to Date object if present
+        if (processedData.dateOfBirth && typeof processedData.dateOfBirth === 'string') {
+            processedData.dateOfBirth = new Date(processedData.dateOfBirth);
+        }
+
+        // Remove any undefined or null values to avoid database issues
+        Object.keys(processedData).forEach(key => {
+            if (processedData[key] === undefined || processedData[key] === null || processedData[key] === '') {
+                delete processedData[key];
+            }
+        });
 
         // Update user data
         const [updatedUser] = await db
             .update(users)
-            .set(updateData)
+            .set(processedData)
             .where(eq(users.id, userId!))
             .returning();
 
