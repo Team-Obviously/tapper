@@ -1,3 +1,6 @@
+
+import { postRequest } from './generalServices'
+
 /**
  * Open Telegram with a prefilled message.
  * 
@@ -20,23 +23,16 @@ export function sendTelegramMessage(message: string, url?: string) {
  */
 export async function generatePersonalizedMessage(fromUserId: string, toUserId: string) {
   try {
-    const response = await fetch('/api/telegram/generate-message', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        fromUserId,
-        toUserId,
-      }),
+    const response = await postRequest('/api/telegram/generate-message', {
+      fromUserId,
+      toUserId
     });
 
-    if (!response.ok) {
+    if (!response.data) {
       throw new Error('Failed to generate message');
     }
 
-    const data = await response.json();
-    return data;
+    return response.data;
   } catch (error) {
     console.error('Error generating personalized message:', error);
     throw error;
