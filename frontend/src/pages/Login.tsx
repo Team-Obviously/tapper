@@ -37,7 +37,7 @@ export default function Login() {
     setError(null)
 
     try {
-      const response = await postRequest('/api/users/login', { email })
+      const response = await postRequest('/users/login', { email })
 
       if (response?.data?.success && response.data.user) {
         // Create user object with login metadata
