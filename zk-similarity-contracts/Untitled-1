@@ -1,0 +1,1 @@
+GET /api/similarity/interest-connections/{userId}
