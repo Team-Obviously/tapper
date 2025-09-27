@@ -1,8 +1,20 @@
 export interface User {
     id: string
     email: string
-    firstName: string
-    lastName: string
+    firstName?: string
+    lastName?: string
+    phone?: string
+    location?: string
+    interests?: string[]
+    skillLevel?: string
+    availability?: string
+    company?: string
+    position?: string
+    experience?: string
+    isHiring?: string
+    resumeUrl?: string
+    data?: any
+    createdAt?: string
     isLoggedIn: boolean
     loginTime: string
 }

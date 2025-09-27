@@ -9,6 +9,7 @@ import {
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import { getRequest, postRequest } from '../utility/generalServices'
+import { getCurrentUser } from '../utility/auth'
 import { Users, Trophy, Briefcase, Heart, Loader2, Send, UserPlus, CheckCircle } from 'lucide-react'
 import { toast } from 'sonner'
 

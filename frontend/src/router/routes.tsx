@@ -1,5 +1,6 @@
 import { Landing } from '@/pages/Landing'
 import Registration from '@/pages/Registration'
+import Login from '@/pages/Login'
 import Home from '@/pages/Home'
 import MyTags from '@/pages/MyTags'
 import Explore from '@/pages/Explore'
@@ -9,11 +10,15 @@ import Layout from '@/components/Layout'
 const AppRoutes: BrowserRouterProps = createBrowserRouter([
   {
     path: '/',
-    element: <Landing />
+    element: <Landing />,
   },
   {
     path: '/register',
-    element: <Registration />
+    element: <Registration />,
+  },
+  {
+    path: '/login',
+    element: <Login />,
   },
   {
     path: '/dashboard',
@@ -21,28 +26,26 @@ const AppRoutes: BrowserRouterProps = createBrowserRouter([
     children: [
       {
         path: '/dashboard',
-        element: <Home />
+        element: <Home />,
       },
       {
         path: '/dashboard/home',
-        element: <Home />
+        element: <Home />,
       },
       {
         path: '/dashboard/my-tags',
-        element: <MyTags />
+        element: <MyTags />,
       },
       {
         path: '/dashboard/explore',
-        element: <Explore />
+        element: <Explore />,
       },
       {
         path: '/dashboard/profile',
-        element: <Profile />
-      }
-    ]
+        element: <Profile />,
+      },
+    ],
   },
-
 ])
-
 
 export default AppRoutes
