@@ -16,7 +16,7 @@ import {
     AlertCircle,
     UserPlus
 } from 'lucide-react'
-import { getRequest, postRequest } from '../utility/generalServices'
+import { getRequest, putRequest } from '../utility/generalServices'
 import { getCurrentUser, getUserId } from '../utility/auth'
 import { toast } from 'sonner'
 
@@ -86,7 +86,7 @@ export default function Notifications() {
         setError(null)
 
         try {
-            const result = await postRequest(`/invitations/respond/${invitationId}`, { response })
+            const result = await putRequest(`/invitations/respond/${invitationId}`, { response })
             console.log('🤝 Response result:', result)
 
             if (result.status === 200) {
