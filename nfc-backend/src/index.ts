@@ -4,6 +4,7 @@ import cors from 'cors';
 import { json, urlencoded } from 'express';
 import { nfcRouter } from './routers/nfcRouter';
 import { userRouter } from './controllers/userRouter';
+import { similarityRouter } from './routers/similarityRouter';
 import { requestLogger } from './middleware/requestLogger';
 
 const app = express();
@@ -18,6 +19,7 @@ app.get('/healthz', (_req, res) => {
 
 app.use('/api/users', userRouter);
 app.use('/api/nfc', nfcRouter);
+app.use('/api/similarity', similarityRouter);
 
 const port = Number(process.env.PORT || 3000);
 app.listen(port, () => {
