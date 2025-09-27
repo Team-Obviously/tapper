@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, jsonb, index } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, timestamp, jsonb, index, varchar } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 export const users = pgTable('users', {
@@ -19,6 +19,7 @@ export const users = pgTable('users', {
     experience: text('experience'),
     isHiring: text('is_hiring').default('false'), // boolean as text for simplicity
     resumeUrl: text('resume_url'), // URL to uploaded resume file
+    resumeBlob: varchar('resume_blob', {length: 256}),
     // Additional data for future use
     data: jsonb('data'), // additional profile data
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
