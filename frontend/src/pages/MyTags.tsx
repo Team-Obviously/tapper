@@ -334,63 +334,64 @@ export default function MyTags() {
                   onNfcDetected={handleNfcDetected}
                   onError={handleNfcError}
                 />
+
+                {/* NFC Data Display - Integrated into the same card */}
+                {nfcData && (
+                  <div className="mt-6 p-4 bg-green-100 rounded-lg border border-green-200">
+                    <div className="flex items-center space-x-2 mb-3">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span className="text-sm font-medium text-green-800">NFC Detected!</span>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div>
+                        <h4 className="font-medium text-green-800 mb-2 text-sm">Data received:</h4>
+                        <div className="bg-white rounded p-3 border max-h-32 overflow-y-auto">
+                          <pre className="text-xs text-green-700 whitespace-pre-wrap break-words">
+                            {JSON.stringify(nfcData, null, 2)}
+                          </pre>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
+                        <Button
+                          size="sm"
+                          onClick={() => setNfcData(null)}
+                          variant="outline"
+                          className="text-xs"
+                        >
+                          Clear Data
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => setShowNfcDetector(true)}
+                          className="bg-blue-600 hover:bg-blue-700 text-xs"
+                        >
+                          Scan Again
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => registerNfcTag(nfcData)}
+                          disabled={isRegisteringNfc}
+                          className="bg-green-600 hover:bg-green-700 text-xs"
+                        >
+                          {isRegisteringNfc ? (
+                            <>
+                              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                              Registering...
+                            </>
+                          ) : (
+                            'Register NFC Tag'
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
         </Card>
-
-        {/* NFC Data Display */}
-        {nfcData && (
-          <Card className="mb-8 border-green-200 bg-green-50">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2 text-green-800">
-                <Wifi className="w-5 h-5" />
-                <span>NFC Data Detected</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="bg-green-100 rounded-lg p-4">
-                  <h4 className="font-medium text-green-800 mb-2">Detected Data:</h4>
-                  <pre className="text-sm text-green-700 bg-white rounded p-3 overflow-x-auto">
-                    {JSON.stringify(nfcData, null, 2)}
-                  </pre>
-                </div>
-                <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
-                  <Button
-                    size="sm"
-                    onClick={() => setNfcData(null)}
-                    variant="outline"
-                  >
-                    Clear Data
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => setShowNfcDetector(true)}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    Scan Again
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => registerNfcTag(nfcData)}
-                    disabled={isRegisteringNfc}
-                    className="bg-green-600 hover:bg-green-700"
-                  >
-                    {isRegisteringNfc ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Registering...
-                      </>
-                    ) : (
-                      'Register NFC Tag'
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Error Display */}
         {nfcError && (

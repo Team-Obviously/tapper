@@ -2,6 +2,7 @@ import { Landing } from '@/pages/Landing'
 import Registration from '@/pages/Registration'
 import Home from '@/pages/Home'
 import MyTags from '@/pages/MyTags'
+import Explore from '@/pages/Explore'
 import { BrowserRouterProps, createBrowserRouter } from 'react-router-dom'
 import Layout from '@/components/Layout'
 const AppRoutes: BrowserRouterProps = createBrowserRouter([
@@ -28,10 +29,14 @@ const AppRoutes: BrowserRouterProps = createBrowserRouter([
       {
         path: '/dashboard/my-tags',
         element: <MyTags />
+      },
+      {
+        path: '/dashboard/explore',
+        element: <Explore />
       }
     ]
   },
-  
+
 ])
 
 
