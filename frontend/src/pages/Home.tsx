@@ -7,6 +7,7 @@ import {
   CardTitle,
 } from '../components/ui/card'
 import { getRequest } from '../utility/generalServices'
+import { getCurrentUser } from '../utility/auth'
 import { Users, Trophy, Briefcase, Heart, Loader2 } from 'lucide-react'
 
 interface InterestConnection {
@@ -50,11 +51,18 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Mock user ID - in a real app, this would come from auth context
-  const userId = '123e4567-e89b-12d3-a456-426614174000'
+  // Get user ID from auth context
+  const currentUser = getCurrentUser()
+  const userId = currentUser?.id
 
   useEffect(() => {
     const fetchInterestConnections = async () => {
+      if (!userId) {
+        setError('Please log in to view your connections')
+        setLoading(false)
+        return
+      }
+
       try {
         setLoading(true)
         const response = await getRequest(

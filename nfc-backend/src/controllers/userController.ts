@@ -25,6 +25,11 @@ const createUserSchema = z.object({
     resumeUrl: z.string().optional(),
 });
 
+// Define validation schema for user login
+const loginUserSchema = z.object({
+    email: z.string().email('Invalid email address'),
+});
+
 export async function createUser(req: Request, res: Response) {
     console.log('CREATE USERreq.body', req.body);
     const parsed = createUserSchema.safeParse(req.body);
@@ -66,6 +71,69 @@ export async function createUser(req: Request, res: Response) {
 
         return res.status(500).json({
             error: 'Failed to create user',
+            message: 'Internal server error'
+        });
+    }
+}
+
+export async function loginUser(req: Request, res: Response) {
+    console.log('LOGIN USER req.body', req.body);
+    const parsed = loginUserSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+        return res.status(400).json({
+            success: false,
+            error: 'Invalid email format',
+            details: parsed.error.flatten()
+        });
+    }
+
+    try {
+        const { email } = parsed.data;
+
+        // Find user by email
+        const [user] = await db
+            .select()
+            .from(users)
+            .where(eq(users.email, email))
+            .limit(1);
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                error: 'User not found',
+                message: 'No user found with this email address'
+            });
+        }
+
+        // Return user data (excluding sensitive information if any)
+        return res.status(200).json({
+            success: true,
+            user: {
+                id: user.id,
+                email: user.email,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                phone: user.phone,
+                location: user.location,
+                interests: user.interests,
+                skillLevel: user.skillLevel,
+                availability: user.availability,
+                company: user.company,
+                position: user.position,
+                experience: user.experience,
+                isHiring: user.isHiring,
+                resumeUrl: user.resumeUrl,
+                data: user.data,
+                createdAt: user.createdAt
+            },
+            message: 'Login successful'
+        });
+    } catch (error: any) {
+        console.error('Error during login:', error);
+        return res.status(500).json({
+            success: false,
+            error: 'Login failed',
             message: 'Internal server error'
         });
     }
