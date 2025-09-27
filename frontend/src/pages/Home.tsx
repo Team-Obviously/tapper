@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Card,
   CardContent,
@@ -9,8 +10,7 @@ import {
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import { getRequest, postRequest } from '../utility/generalServices'
-import { getCurrentUser } from '../utility/auth'
-import { Users, Trophy, Briefcase, Heart, Loader2, Send, UserPlus, CheckCircle } from 'lucide-react'
+import { Users, Trophy, Briefcase, Heart, Loader2, Send, UserPlus, CheckCircle, ExternalLink } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface InterestConnection {
@@ -53,6 +53,7 @@ interface AcceptedConnection {
 }
 
 export default function Home() {
+  const navigate = useNavigate()
   const [connectionSummary, setConnectionSummary] = useState<ConnectionSummary>(
     {
       sports: 0,
@@ -247,6 +248,27 @@ export default function Home() {
     } catch (error) {
       console.error('❌ Error loading sent invitations:', error)
     }
+  }
+
+  // Function to navigate to user profile page
+  const navigateToUserProfile = (connection: AcceptedConnection) => {
+    console.log('👤 Navigating to user profile for:', connection)
+
+    // Navigate to the user profile page with connection data
+    navigate(`/dashboard/user/${connection.userId2}`, {
+      state: {
+        userData: {
+          id: connection.userId2,
+          firstName: connection.otherUser?.firstName || 'Unknown',
+          lastName: connection.otherUser?.lastName || 'User',
+          email: connection.otherUser?.email,
+        },
+        connectionDetails: {
+          sharedInterest: connection.sharedInterest,
+          connectedDate: connection.createdAt
+        }
+      }
+    })
   }
 
   useEffect(() => {
@@ -630,7 +652,11 @@ export default function Home() {
                 </Card>
               ) : (
                 acceptedConnections.map((connection) => (
-                  <Card key={connection.id} className="p-4">
+                  <Card
+                    key={connection.id}
+                    className="p-4 cursor-pointer hover:shadow-md transition-shadow"
+                    onClick={() => navigateToUserProfile(connection)}
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
@@ -645,9 +671,12 @@ export default function Home() {
                           </p>
                         </div>
                       </div>
-                      <Badge variant="secondary" className="text-xs">
-                        {new Date(connection.createdAt).toLocaleDateString()}
-                      </Badge>
+                      <div className="flex items-center">
+                        <Badge variant="secondary" className="text-xs mr-2">
+                          {new Date(connection.createdAt).toLocaleDateString()}
+                        </Badge>
+                        <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                      </div>
                     </div>
                   </Card>
                 ))
