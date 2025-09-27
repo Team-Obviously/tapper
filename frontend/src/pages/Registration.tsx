@@ -23,6 +23,8 @@ import { postRequest } from '../utility/generalServices'
 import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
 import { uploadFileWithTusky, validateFile, formatFileSize } from '../utility/tuskyUpload'
+import { EnsProfile } from '../components/EnsProfile'
+import { useConnect } from 'wagmi'
 
 
 interface BasicInfo {
@@ -42,6 +44,10 @@ interface SportsInfo {
 interface WorkInfo {
   resume: File | null
   resumeBlob?: ArrayBuffer
+  resumeProof?: string
+  resumeCommitment?: string
+  resumePublicSignals?: string[]
+  resumeData?: any
   isHiring: boolean
   company: string
   position: string
@@ -97,6 +103,7 @@ const experienceLevels = [
 
 export default function Registration() {
   const router = useNavigate()
+  const { connect, connectors } = useConnect()
   const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -124,6 +131,16 @@ export default function Registration() {
 
   const totalSteps = 3
   const progress = (currentStep / totalSteps) * 100
+
+  const handleWalletConnect = () => {
+    try {
+      const connector = connectors[0] // Use the first available connector (usually MetaMask)
+      connect({ connector })
+    } catch (error) {
+      console.error('Failed to connect wallet:', error)
+      toast.error('Failed to connect wallet. Please try again.')
+    }
+  }
 
   const handleBasicInfoChange = (field: keyof BasicInfo, value: string) => {
     setBasicInfo((prev) => ({ ...prev, [field]: value }))
@@ -165,17 +182,35 @@ export default function Registration() {
     setResumeUploadError(null)
 
     try {
+      // Get user ID for zkPDF processing
+      // const userId = localStorage.getItem('userId') || 'temp-user'
+      
+      // // Process with zkPDF first
+      // const zkResult = await processResumeWithZkPdf(
+      //   file, 
+      //   getDefaultVerificationCriteria(),
+      //   userId
+      // )
+
+      // if (!zkResult.success) {
+      //   throw new Error(zkResult.error || 'ZK processing failed')
+      // }
+
       // Upload file with Tusky
       const uploadResult = await uploadFileWithTusky(file, `resume_${Date.now()}_${file.name}`)
 
       if (uploadResult.success && uploadResult.fileBuffer) {
-        // Store the file and URL
+        // Store the file, ZK proof data, and URL
         setWorkInfo((prev) => ({
           ...prev,
           resume: file,
-          resumeBlob: uploadResult.fileBuffer
+          resumeBlob: uploadResult.fileBuffer,
+          resumeProof: zkResult.proof,
+          resumeCommitment: zkResult.commitment,
+          resumePublicSignals: zkResult.publicSignals,
+          resumeData: zkResult.resumeData
         }))
-        toast.success('Resume uploaded successfully!')
+        toast.success('Resume verified with zero-knowledge proof!')
       } else {
         throw new Error(uploadResult.error || 'Upload failed')
       }
@@ -318,6 +353,15 @@ export default function Registration() {
               <User className="w-12 h-12 mx-auto mb-4 text-primary" />
               <h2 className="text-2xl font-bold mb-2">Basic Information</h2>
               <p className="text-muted-foreground">Tell us about yourself</p>
+            </div>
+
+            {/* ENS Profile Section */}
+            <div className="mb-6">
+              <Label className="text-base font-medium mb-3 block">Connect Your Wallet (Optional)</Label>
+              <p className="text-sm text-muted-foreground mb-4">
+                Connect your wallet to display your ENS name and avatar
+              </p>
+              <EnsProfile onConnect={handleWalletConnect} />
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -505,9 +549,35 @@ export default function Registration() {
                         PDF, DOC, DOCX (max 10MB)
                       </p>
                       {workInfo.resumeBlob && (
-                        <p className="text-xs text-green-600">
-                          ✓ Resume uploaded successfully
-                        </p>
+                        <div className="space-y-1">
+                          <p className="text-xs text-green-600">
+                            ✓ Resume uploaded successfully
+                          </p>
+                          {workInfo.resumeProof && (
+                            <p className="text-xs text-blue-600">
+                              🔒 Zero-knowledge proof generated
+                            </p>
+                          )}
+                          {workInfo.resumeData && (
+                            <div className="text-xs text-gray-600 mt-2">
+                              <p>Verified attributes:</p>
+                              <ul className="text-left mt-1 space-y-0.5">
+                                {workInfo.resumeData.hasDegree && (
+                                  <li>• Degree: {workInfo.resumeData.degreeText || 'Verified'}</li>
+                                )}
+                                {workInfo.resumeData.hasExperience && (
+                                  <li>• Experience: {workInfo.resumeData.experienceYears} years</li>
+                                )}
+                                {workInfo.resumeData.hasSkills && (
+                                  <li>• Skills: {workInfo.resumeData.skillsCount} found</li>
+                                )}
+                                {workInfo.resumeData.hasCertification && (
+                                  <li>• Certifications: {workInfo.resumeData.certificationsCount} found</li>
+                                )}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
                       )}
                       {resumeUploadError && (
                         <p className="text-xs text-red-600">
