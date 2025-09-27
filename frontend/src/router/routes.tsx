@@ -5,6 +5,7 @@ import Home from '@/pages/Home'
 import MyTags from '@/pages/MyTags'
 import Explore from '@/pages/Explore'
 import Profile from '@/pages/Profile'
+import UserProfile from '@/pages/UserProfile'
 import { BrowserRouterProps, createBrowserRouter } from 'react-router-dom'
 import Layout from '@/components/Layout'
 const AppRoutes: BrowserRouterProps = createBrowserRouter([
@@ -43,6 +44,10 @@ const AppRoutes: BrowserRouterProps = createBrowserRouter([
       {
         path: '/dashboard/profile',
         element: <Profile />,
+      },
+      {
+        path: '/dashboard/user/:userId',
+        element: <UserProfile />,
       },
     ],
   },
