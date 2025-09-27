@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "is_open_to_relationships" text DEFAULT 'false';

@@ -43,6 +43,7 @@ interface WorkInfo {
   resume: File | null
   resumeBlob?: ArrayBuffer
   isHiring: boolean
+  isOpenToRelationships: boolean
   company: string
   position: string
   experience: string
@@ -117,6 +118,7 @@ export default function Registration() {
   const [workInfo, setWorkInfo] = useState<WorkInfo>({
     resume: null,
     isHiring: false,
+    isOpenToRelationships: false,
     company: '',
     position: '',
     experience: '',
@@ -223,6 +225,7 @@ export default function Registration() {
         position: workInfo.position || undefined,
         experience: workInfo.experience || undefined,
         isHiring: workInfo.isHiring,
+        isOpenToRelationships: workInfo.isOpenToRelationships,
         resumeBlob: workInfo.resumeBlob,
       }
 
@@ -268,6 +271,7 @@ export default function Registration() {
         setWorkInfo({
           resume: null,
           isHiring: false,
+          isOpenToRelationships: false,
           company: '',
           position: '',
           experience: '',
@@ -541,6 +545,22 @@ export default function Registration() {
                   className="text-base font-medium cursor-pointer"
                 >
                   I am currently hiring
+                </Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="isOpenToRelationships"
+                  checked={workInfo.isOpenToRelationships}
+                  onCheckedChange={(checked) =>
+                    handleWorkInfoChange('isOpenToRelationships', checked as boolean)
+                  }
+                />
+                <Label
+                  htmlFor="isOpenToRelationships"
+                  className="text-base font-medium cursor-pointer"
+                >
+                  I am open to dating and relationships
                 </Label>
               </div>
             </div>

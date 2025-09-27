@@ -24,6 +24,7 @@ const generateUsers = (count: number) => {
             position: faker.person.jobTitle(),
             experience: faker.helpers.arrayElement(['0-2 years', '3-5 years', '6-10 years', '10+ years']),
             isHiring: faker.datatype.boolean() ? 'true' : 'false',
+            isOpenToRelationships: faker.datatype.boolean() ? 'true' : 'false',
             resumeUrl: faker.internet.url(),
             data: JSON.stringify({
                 bio: faker.lorem.paragraph(),

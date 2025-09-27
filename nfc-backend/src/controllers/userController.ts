@@ -22,6 +22,7 @@ const createUserSchema = z.object({
     position: z.string().optional(),
     experience: z.string().optional(),
     isHiring: z.boolean().optional(),
+    isOpenToRelationships: z.boolean().optional(),
     resumeUrl: z.string().optional(),
 });
 
@@ -42,10 +43,11 @@ export async function createUser(req: Request, res: Response) {
     }
 
     try {
-        // Convert isHiring boolean to string for database storage
+        // Convert boolean fields to string for database storage
         const userData = {
             ...parsed.data,
-            isHiring: parsed.data.isHiring ? 'true' : 'false'
+            isHiring: parsed.data.isHiring ? 'true' : 'false',
+            isOpenToRelationships: parsed.data.isOpenToRelationships ? 'true' : 'false'
         };
 
         const [inserted] = await db
@@ -123,6 +125,7 @@ export async function loginUser(req: Request, res: Response) {
                 position: user.position,
                 experience: user.experience,
                 isHiring: user.isHiring,
+                isOpenToRelationships: user.isOpenToRelationships,
                 resumeUrl: user.resumeUrl,
                 data: user.data,
                 createdAt: user.createdAt
@@ -178,7 +181,7 @@ export async function updateUser(req: Request, res: Response) {
         const allowedFields = [
             'firstName', 'lastName', 'email', 'phone', 'location',
             'interests', 'skillLevel', 'availability', 'company',
-            'position', 'experience', 'isHiring', 'resumeUrl'
+            'position', 'experience', 'isHiring', 'isOpenToRelationships', 'resumeUrl'
         ];
 
         const processedData: any = {};

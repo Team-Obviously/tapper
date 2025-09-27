@@ -363,3 +363,82 @@ export const getUsersWithSharedInterests = async (req: Request, res: Response) =
         });
     }
 };
+
+// Get users by preference (hiring or dating)
+export const getUsersByPreference = async (req: Request, res: Response) => {
+    try {
+        const { userId, preference } = req.params;
+
+        if (!userId || !preference) {
+            return res.status(400).json({
+                success: false,
+                error: 'User ID and preference are required'
+            });
+        }
+
+        if (!['hiring', 'dating'].includes(preference)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Preference must be either "hiring" or "dating"'
+            });
+        }
+
+        console.log(`🔍 Looking for users with preference: ${preference} (excluding user ${userId})`);
+
+        // Get users with the specified preference
+        const allUsers = await db
+            .select({
+                id: users.id,
+                firstName: users.firstName,
+                lastName: users.lastName,
+                email: users.email,
+                isHiring: users.isHiring,
+                isOpenToRelationships: users.isOpenToRelationships,
+                interests: users.interests,
+                company: users.company,
+                position: users.position
+            })
+            .from(users)
+            .limit(50);
+
+        console.log(`📊 Found ${allUsers.length} total users in database`);
+
+        // Filter users based on preference
+        const filteredUsers = allUsers
+            .filter(user => user.id !== userId)
+            .filter(user => {
+                if (preference === 'hiring') {
+                    return user.isHiring === 'true';
+                } else if (preference === 'dating') {
+                    return user.isOpenToRelationships === 'true';
+                }
+                return false;
+            })
+            .map(user => ({
+                id: user.id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
+                company: user.company,
+                position: user.position,
+                sharedInterest: preference === 'hiring' ? 'Professional Opportunity' : 'Dating',
+                similarityScore: Math.random() * 0.3 + 0.7 // Random score between 0.7-1.0
+            }));
+
+        console.log(`✅ Found ${filteredUsers.length} users with preference '${preference}'`);
+        if (filteredUsers.length > 0) {
+            console.log(`✅ First matching user:`, filteredUsers[0]);
+        }
+
+        res.status(200).json({
+            success: true,
+            data: filteredUsers
+        });
+    } catch (error) {
+        console.error('Error fetching users by preference:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch users by preference'
+        });
+    }
+};

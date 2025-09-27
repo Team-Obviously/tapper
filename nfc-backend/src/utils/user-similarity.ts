@@ -14,6 +14,7 @@ export interface UserProfile {
     position: string | null;
     experience: string | null;
     isHiring: string | null; // 'true' or 'false'
+    isOpenToRelationships: string | null; // 'true' or 'false' - dating/relationship preference
     resumeUrl: string | null;
     data: any; // Additional JSON data
 }
@@ -23,13 +24,14 @@ export interface UserProfile {
  * These weights should sum up to 1.0 for a properly normalized score.
  */
 const FIELD_WEIGHTS: Record<keyof UserProfile, number> = {
-    interests: 0.40,      // High importance for matching sports partners
-    skillLevel: 0.20,     // High importance for matching opponents/teammates
+    interests: 0.35,      // High importance for matching sports partners
+    skillLevel: 0.15,     // High importance for matching opponents/teammates
     availability: 0.15,   // Moderate importance for scheduling
     company: 0.05,
     position: 0.05,
     experience: 0.05,
     isHiring: 0.05,       // Relevant for professional networking matches
+    isOpenToRelationships: 0.10, // Important for dating/relationship matches
     resumeUrl: 0.00,      // Usually ignored for direct similarity
     data: 0.05,           // Reserve weight for custom logic
 };
@@ -46,9 +48,9 @@ const FIELD_WEIGHTS: Record<keyof UserProfile, number> = {
 const jaccardSimilarity = (arr1: string[] | null, arr2: string[] | null): number => {
     const a = arr1 ? arr1.map(item => item.trim().toLowerCase()) : [];
     const b = arr2 ? arr2.map(item => item.trim().toLowerCase()) : [];
-    
+
     // Handle null/empty cases
-    if (a.length === 0 && b.length === 0) return 1.0; 
+    if (a.length === 0 && b.length === 0) return 1.0;
     if (a.length === 0 || b.length === 0) return 0.0;
 
     const set1 = new Set(a);
@@ -62,7 +64,7 @@ const jaccardSimilarity = (arr1: string[] | null, arr2: string[] | null): number
     }
 
     const unionSize = set1.size + set2.size - intersectionSize;
-    
+
     return unionSize > 0 ? intersectionSize / unionSize : 0;
 };
 
@@ -73,11 +75,11 @@ const jaccardSimilarity = (arr1: string[] | null, arr2: string[] | null): number
 const textSimilarity = (text1: string | null, text2: string | null): number => {
     const t1 = (text1 || '').trim().toLowerCase();
     const t2 = (text2 || '').trim().toLowerCase();
-    
+
     // If both are empty/null/whitespace, consider it a match (1.0)
-    if (!t1 && !t2) return 1.0; 
+    if (!t1 && !t2) return 1.0;
     // If one is empty and the other is not, consider it a non-match (0.0)
-    if (!t1 || !t2) return 0.0; 
+    if (!t1 || !t2) return 0.0;
 
     // Exact match comparison
     return t1 === t2 ? 1.0 : 0.0;
@@ -90,7 +92,7 @@ const booleanSimilarity = (bool1: string | null, bool2: string | null): number =
     // Standardize to a boolean type for comparison
     const b1 = (bool1 || '').toLowerCase() === 'true';
     const b2 = (bool2 || '').toLowerCase() === 'true';
-    
+
     // Check if the boolean states match
     return b1 === b2 ? 1.0 : 0.0;
 };
@@ -120,7 +122,7 @@ export const calculateUserSimilarity = (userA: UserProfile, userB: UserProfile):
     // 2. Skill Level (Exact Match)
     const skillLevelSim = textSimilarity(userA.skillLevel, userB.skillLevel);
     totalWeightedScore += skillLevelSim * FIELD_WEIGHTS.skillLevel;
-    
+
     // 3. Availability (Exact Match)
     const availabilitySim = textSimilarity(userA.availability, userB.availability);
     totalWeightedScore += availabilitySim * FIELD_WEIGHTS.availability;
@@ -130,19 +132,19 @@ export const calculateUserSimilarity = (userA: UserProfile, userB: UserProfile):
     // 4. Company, Position, Experience (Exact Match)
     const companySim = textSimilarity(userA.company, userB.company);
     totalWeightedScore += companySim * FIELD_WEIGHTS.company;
-    
+
     const positionSim = textSimilarity(userA.position, userB.position);
     totalWeightedScore += positionSim * FIELD_WEIGHTS.position;
-    
+
     const experienceSim = textSimilarity(userA.experience, userB.experience);
     totalWeightedScore += experienceSim * FIELD_WEIGHTS.experience;
-    
+
     // 5. isHiring (Boolean Match)
     const isHiringSim = booleanSimilarity(userA.isHiring, userB.isHiring);
     totalWeightedScore += isHiringSim * FIELD_WEIGHTS.isHiring;
 
     // --- Misc Fields ---
-    
+
     // 6. resumeUrl (Exact Match - usually only if both are present and identical)
     const resumeUrlSim = textSimilarity(userA.resumeUrl, userB.resumeUrl);
     totalWeightedScore += resumeUrlSim * FIELD_WEIGHTS.resumeUrl;
@@ -150,7 +152,7 @@ export const calculateUserSimilarity = (userA: UserProfile, userB: UserProfile):
     // 7. Data (Custom JSON - Placeholder for custom logic)
     // For simplicity, we'll assign 0.0 unless both 'data' fields are empty/null.
     const dataEmpty = !userA.data && !userB.data;
-    const dataSim = dataEmpty ? 1.0 : 0.0; 
+    const dataSim = dataEmpty ? 1.0 : 0.0;
     totalWeightedScore += dataSim * FIELD_WEIGHTS.data;
 
     // The result is already normalized between 0.0 and 1.0 because weights sum to 1.0.
@@ -204,7 +206,7 @@ export const calculateUserSimilarityWithFields = (userA: UserProfile, userB: Use
         weightedScore: skillLevelWeighted,
     });
     totalWeightedScore += skillLevelWeighted;
-    
+
     // 3. Availability (Exact Match)
     const availabilitySim = textSimilarity(userA.availability, userB.availability);
     const availabilityWeighted = availabilitySim * FIELD_WEIGHTS.availability;
@@ -228,7 +230,7 @@ export const calculateUserSimilarityWithFields = (userA: UserProfile, userB: Use
         weightedScore: companyWeighted,
     });
     totalWeightedScore += companyWeighted;
-    
+
     const positionSim = textSimilarity(userA.position, userB.position);
     const positionWeighted = positionSim * FIELD_WEIGHTS.position;
     fieldSimilarities.push({
@@ -238,7 +240,7 @@ export const calculateUserSimilarityWithFields = (userA: UserProfile, userB: Use
         weightedScore: positionWeighted,
     });
     totalWeightedScore += positionWeighted;
-    
+
     const experienceSim = textSimilarity(userA.experience, userB.experience);
     const experienceWeighted = experienceSim * FIELD_WEIGHTS.experience;
     fieldSimilarities.push({
@@ -248,7 +250,7 @@ export const calculateUserSimilarityWithFields = (userA: UserProfile, userB: Use
         weightedScore: experienceWeighted,
     });
     totalWeightedScore += experienceWeighted;
-    
+
     // 5. isHiring (Boolean Match)
     const isHiringSim = booleanSimilarity(userA.isHiring, userB.isHiring);
     const isHiringWeighted = isHiringSim * FIELD_WEIGHTS.isHiring;
@@ -261,7 +263,7 @@ export const calculateUserSimilarityWithFields = (userA: UserProfile, userB: Use
     totalWeightedScore += isHiringWeighted;
 
     // --- Misc Fields ---
-    
+
     // 6. resumeUrl (Exact Match - usually only if both are present and identical)
     const resumeUrlSim = textSimilarity(userA.resumeUrl, userB.resumeUrl);
     const resumeUrlWeighted = resumeUrlSim * FIELD_WEIGHTS.resumeUrl;

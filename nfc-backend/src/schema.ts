@@ -18,6 +18,7 @@ export const users = pgTable('users', {
     position: text('position'),
     experience: text('experience'),
     isHiring: text('is_hiring').default('false'), // boolean as text for simplicity
+    isOpenToRelationships: text('is_open_to_relationships').default('false'), // dating/relationship preference
     resumeUrl: text('resume_url'), // URL to uploaded resume file
     resumeBlob: varchar('resume_blob', { length: 256 }),
     // Additional data for future use

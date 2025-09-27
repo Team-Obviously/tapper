@@ -5,7 +5,8 @@ import {
     respondToInvitation,
     getAcceptedConnections,
     getUsersWithSharedInterests,
-    getSentInvitations
+    getSentInvitations,
+    getUsersByPreference
 } from '../controllers/invitationController';
 
 const router = Router();
@@ -27,5 +28,8 @@ router.get('/shared-interests/:userId/:interest', getUsersWithSharedInterests);
 
 // Get invitations sent by a user
 router.get('/sent/:userId', getSentInvitations);
+
+// Get users by preference (hiring or dating)
+router.get('/preference/:userId/:preference', getUsersByPreference);
 
 export default router;
