@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '../components/ui/button'
 import {
     Card,
@@ -31,7 +31,6 @@ interface UserData {
     lastName: string
     email: string
     phone?: string
-    dateOfBirth?: string
     location?: string
     interests?: string[]
     skillLevel?: string
@@ -367,17 +366,7 @@ export default function Profile() {
                                     className="text-base"
                                 />
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="dateOfBirth">Date of Birth</Label>
-                                <Input
-                                    id="dateOfBirth"
-                                    type="date"
-                                    value={isEditing ? editData.dateOfBirth || '' : userData?.dateOfBirth || ''}
-                                    onChange={isEditing ? (e) => handleInputChange('dateOfBirth', e.target.value) : undefined}
-                                    disabled={!isEditing}
-                                    className="text-base"
-                                />
-                            </div>
+                            {/*  */}
                             <div className="space-y-2">
                                 <Label htmlFor="location">Location</Label>
                                 <Input

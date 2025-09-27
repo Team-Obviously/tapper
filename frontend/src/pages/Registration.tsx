@@ -22,13 +22,14 @@ import {
 import { postRequest } from '../utility/generalServices'
 import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
+import { uploadFileWithTusky, validateFile, formatFileSize } from '../utility/tuskyUpload'
+
 
 interface BasicInfo {
   firstName: string
   lastName: string
   email: string
   phone: string
-  dateOfBirth: string
   location: string
 }
 
@@ -40,6 +41,7 @@ interface SportsInfo {
 
 interface WorkInfo {
   resume: File | null
+  resumeBlob?: ArrayBuffer
   isHiring: boolean
   company: string
   position: string
@@ -98,12 +100,13 @@ export default function Registration() {
   const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [isUploadingResume, setIsUploadingResume] = useState(false)
+  const [resumeUploadError, setResumeUploadError] = useState<string | null>(null)
   const [basicInfo, setBasicInfo] = useState<BasicInfo>({
     firstName: '',
     lastName: '',
     email: '',
     phone: '',
-    dateOfBirth: '',
     location: '',
   })
   const [sportsInfo, setSportsInfo] = useState<SportsInfo>({
@@ -142,9 +145,48 @@ export default function Registration() {
     setWorkInfo((prev) => ({ ...prev, [field]: value }))
   }
 
-  const handleResumeUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleResumeUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] || null
-    setWorkInfo((prev) => ({ ...prev, resume: file }))
+
+    if (!file) {
+      setWorkInfo((prev) => ({ ...prev, resume: null }))
+      return
+    }
+
+    // Validate file
+    const validation = validateFile(file)
+    if (!validation.valid) {
+      setResumeUploadError(validation.error || 'Invalid file')
+      toast.error(validation.error || 'Invalid file')
+      return
+    }
+
+    setIsUploadingResume(true)
+    setResumeUploadError(null)
+
+    try {
+      // Upload file with Tusky
+      const uploadResult = await uploadFileWithTusky(file, `resume_${Date.now()}_${file.name}`)
+
+      if (uploadResult.success && uploadResult.fileBuffer) {
+        // Store the file and URL
+        setWorkInfo((prev) => ({
+          ...prev,
+          resume: file,
+          resumeBlob: uploadResult.fileBuffer
+        }))
+        toast.success('Resume uploaded successfully!')
+      } else {
+        throw new Error(uploadResult.error || 'Upload failed')
+      }
+    } catch (error) {
+      console.error('Resume upload error:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Upload failed'
+      setResumeUploadError(errorMessage)
+      toast.error(`Resume upload failed: ${errorMessage}`)
+    } finally {
+      setIsUploadingResume(false)
+    }
   }
 
   const nextStep = () => {
@@ -171,7 +213,6 @@ export default function Registration() {
         lastName: basicInfo.lastName,
         email: basicInfo.email,
         phone: basicInfo.phone || undefined,
-        dateOfBirth: basicInfo.dateOfBirth || undefined,
         location: basicInfo.location || undefined,
         // Sports Information
         interests: sportsInfo.interests.length > 0 ? sportsInfo.interests : undefined,
@@ -182,7 +223,7 @@ export default function Registration() {
         position: workInfo.position || undefined,
         experience: workInfo.experience || undefined,
         isHiring: workInfo.isHiring,
-        resumeUrl: workInfo.resume ? URL.createObjectURL(workInfo.resume) : undefined,
+        resumeBlob: workInfo.resumeBlob,
       }
 
       console.log('Submitting registration data:', registrationData)
@@ -210,14 +251,13 @@ export default function Registration() {
         router('/dashboard/home')
 
 
-          // Reset form
+        // Reset form
         setCurrentStep(1)
         setBasicInfo({
           firstName: '',
           lastName: '',
           email: '',
           phone: '',
-          dateOfBirth: '',
           location: '',
         })
         setSportsInfo({
@@ -333,18 +373,6 @@ export default function Registration() {
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="dateOfBirth">Date of Birth</Label>
-                <Input
-                  id="dateOfBirth"
-                  type="date"
-                  value={basicInfo.dateOfBirth}
-                  onChange={(e) =>
-                    handleBasicInfoChange('dateOfBirth', e.target.value)
-                  }
-                  className="text-base"
-                />
-              </div>
-              <div className="space-y-2">
                 <Label htmlFor="location">Location</Label>
                 <Input
                   id="location"
@@ -458,23 +486,44 @@ export default function Registration() {
             <div className="space-y-4">
               <Label className="text-base font-medium">Upload Resume</Label>
               <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
-                <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">
-                    {workInfo.resume
-                      ? workInfo.resume.name
-                      : 'Click to upload or drag and drop'}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    PDF, DOC, DOCX (max 10MB)
-                  </p>
-                </div>
-                <Input
-                  type="file"
-                  accept=".pdf,.doc,.docx"
-                  onChange={handleResumeUpload}
-                  className="mt-4"
-                />
+                {isUploadingResume ? (
+                  <div className="space-y-2">
+                    <Loader2 className="w-8 h-8 mx-auto mb-2 text-blue-600 animate-spin" />
+                    <p className="text-sm text-blue-600">Uploading resume...</p>
+                    <p className="text-xs text-muted-foreground">Please wait while we upload your file</p>
+                  </div>
+                ) : (
+                  <>
+                    <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                    <div className="space-y-2">
+                      <p className="text-sm text-muted-foreground">
+                        {workInfo.resume
+                          ? `${workInfo.resume.name} (${formatFileSize(workInfo.resume.size)})`
+                          : 'Click to upload or drag and drop'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        PDF, DOC, DOCX (max 10MB)
+                      </p>
+                      {workInfo.resumeBlob && (
+                        <p className="text-xs text-green-600">
+                          ✓ Resume uploaded successfully
+                        </p>
+                      )}
+                      {resumeUploadError && (
+                        <p className="text-xs text-red-600">
+                          ✗ {resumeUploadError}
+                        </p>
+                      )}
+                    </div>
+                    <Input
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      onChange={handleResumeUpload}
+                      className="mt-4"
+                      disabled={isUploadingResume}
+                    />
+                  </>
+                )}
               </div>
             </div>
 

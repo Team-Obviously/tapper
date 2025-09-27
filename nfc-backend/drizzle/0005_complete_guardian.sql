@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "resume_blob" varchar(256);
