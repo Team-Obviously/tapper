@@ -182,35 +182,19 @@ export default function Registration() {
     setResumeUploadError(null)
 
     try {
-      // Get user ID for zkPDF processing
-      // const userId = localStorage.getItem('userId') || 'temp-user'
-      
-      // // Process with zkPDF first
-      // const zkResult = await processResumeWithZkPdf(
-      //   file, 
-      //   getDefaultVerificationCriteria(),
-      //   userId
-      // )
 
-      // if (!zkResult.success) {
-      //   throw new Error(zkResult.error || 'ZK processing failed')
-      // }
 
       // Upload file with Tusky
       const uploadResult = await uploadFileWithTusky(file, `resume_${Date.now()}_${file.name}`)
 
       if (uploadResult.success && uploadResult.fileBuffer) {
-        // Store the file, ZK proof data, and URL
+        // Store the file and URL
         setWorkInfo((prev) => ({
           ...prev,
           resume: file,
-          resumeBlob: uploadResult.fileBuffer,
-          resumeProof: zkResult.proof,
-          resumeCommitment: zkResult.commitment,
-          resumePublicSignals: zkResult.publicSignals,
-          resumeData: zkResult.resumeData
+          resumeBlob: uploadResult.fileBuffer
         }))
-        toast.success('Resume verified with zero-knowledge proof!')
+        toast.success('Resume uploaded successfully!')
       } else {
         throw new Error(uploadResult.error || 'Upload failed')
       }
