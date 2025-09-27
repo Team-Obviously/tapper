@@ -23,7 +23,7 @@ export function sendTelegramMessage(message: string, url?: string) {
  */
 export async function generatePersonalizedMessage(fromUserId: string, toUserId: string) {
   try {
-    const response = await postRequest('/api/telegram/generate-message', {
+    const response = await postRequest('/telegram/generate-message', {
       fromUserId,
       toUserId
     });
@@ -44,7 +44,7 @@ export async function generatePersonalizedMessage(fromUserId: string, toUserId: 
  */
 export async function sendMessageViaTelegram(fromUserId: string, toUserId: string, message: string) {
   try {
-    const response = await fetch('/api/telegram/send-message', {
+    const response = await postRequest('/telegram/send-message', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -73,7 +73,7 @@ export async function sendMessageViaTelegram(fromUserId: string, toUserId: strin
  */
 export async function getUserTelegramId(userId: string) {
   try {
-    const response = await fetch(`/api/telegram/user/${userId}/telegram-id`);
+    const response = await fetch(`/telegram/user/${userId}/telegram-id`);
 
     if (!response.ok) {
       throw new Error('Failed to get user Telegram ID');
