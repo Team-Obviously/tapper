@@ -149,33 +149,7 @@ export default function Explore() {
 
     const currentUser = getCurrentUser()
 
-    if (!currentUser?.isLoggedIn) {
-        return (
-            <div className="min-h-screen bg-background py-8 px-4">
-                <div className="max-w-6xl mx-auto">
-                    <Card className="border-yellow-200 bg-yellow-50">
-                        <CardHeader>
-                            <CardTitle className="flex items-center space-x-2 text-yellow-800">
-                                <AlertCircle className="w-5 h-5" />
-                                <span>Login Required</span>
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-yellow-600 mb-4">
-                                You need to be logged in to explore and connect with other users.
-                            </p>
-                            <Button
-                                onClick={() => window.location.href = '/register'}
-                                className="bg-yellow-600 hover:bg-yellow-700"
-                            >
-                                Go to Registration
-                            </Button>
-                        </CardContent>
-                    </Card>
-                </div>
-            </div>
-        )
-    }
+    
 
     return (
         <div className="min-h-screen bg-background py-8 px-4">

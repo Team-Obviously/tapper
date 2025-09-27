@@ -1,4 +1,4 @@
-import React from 'react'
+import { useState, useEffect } from 'react'
 import {
   Card,
   CardContent,
@@ -6,137 +6,392 @@ import {
   CardHeader,
   CardTitle,
 } from '../components/ui/card'
+import { getRequest } from '../utility/generalServices'
+import { Users, Trophy, Briefcase, Heart, Loader2 } from 'lucide-react'
+
+interface InterestConnection {
+  user_id: string
+  similarity_score: number
+  shared_interests: string[]
+}
+
+interface InterestData {
+  sports?: InterestConnection[]
+  professional?: InterestConnection[]
+  interests?: InterestConnection[]
+  skills?: InterestConnection[]
+}
+
+interface ConnectionSummary {
+  sports: number
+  professional: number
+  interests: number
+  skills: number
+  total: number
+}
+
+interface InterestBreakdown {
+  [key: string]: number
+}
 
 export default function Home() {
+  const [connectionSummary, setConnectionSummary] = useState<ConnectionSummary>(
+    {
+      sports: 0,
+      professional: 0,
+      interests: 0,
+      skills: 0,
+      total: 0,
+    }
+  )
+  const [interestBreakdown, setInterestBreakdown] = useState<InterestBreakdown>(
+    {}
+  )
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Mock user ID - in a real app, this would come from auth context
+  const userId = '123e4567-e89b-12d3-a456-426614174000'
+
+  useEffect(() => {
+    const fetchInterestConnections = async () => {
+      try {
+        setLoading(true)
+        const response = await getRequest(
+          `/api/similarity/interest-connections/${userId}`
+        )
+
+        if (response?.data?.success && response.data.data) {
+          const interestData: InterestData = response.data.data.similarity || {}
+
+          const summary: ConnectionSummary = {
+            sports: interestData.sports?.length || 0,
+            professional: interestData.professional?.length || 0,
+            interests: interestData.interests?.length || 0,
+            skills: interestData.skills?.length || 0,
+            total: 0,
+          }
+
+          summary.total =
+            summary.sports +
+            summary.professional +
+            summary.interests +
+            summary.skills
+
+          // Process interest breakdown
+          const breakdown: InterestBreakdown = {}
+
+          // Process all categories
+          Object.entries(interestData).forEach(([, connections]) => {
+            connections?.forEach((connection: InterestConnection) => {
+              connection.shared_interests.forEach((interest: string) => {
+                breakdown[interest] = (breakdown[interest] || 0) + 1
+              })
+            })
+          })
+
+          setConnectionSummary(summary)
+          setInterestBreakdown(breakdown)
+        } else {
+          // If API fails, show mock data for demo
+          setConnectionSummary({
+            sports: 12,
+            professional: 8,
+            interests: 15,
+            skills: 6,
+            total: 41,
+          })
+          setInterestBreakdown({
+            Tennis: 8,
+            Basketball: 6,
+            React: 5,
+            Photography: 4,
+            Running: 3,
+            JavaScript: 7,
+            Leadership: 4,
+            Cooking: 2,
+          })
+        }
+      } catch (err) {
+        console.error('Error fetching interest connections:', err)
+        setError('Failed to load connection data')
+        // Show mock data on error
+        setConnectionSummary({
+          sports: 12,
+          professional: 8,
+          interests: 15,
+          skills: 6,
+          total: 41,
+        })
+        setInterestBreakdown({
+          Tennis: 8,
+          Basketball: 6,
+          React: 5,
+          Photography: 4,
+          Running: 3,
+          JavaScript: 7,
+          Leadership: 4,
+          Cooking: 2,
+        })
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchInterestConnections()
+  }, [userId])
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero Section */}
-      <section className="py-12 px-4 md:py-20">
+      {/* Header Section */}
+      <section className="py-8 px-4 md:py-12">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold mb-4 md:text-6xl">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold mb-4 md:text-5xl">
               Welcome to Tapper
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Connect with like-minded people through sports and professional
-              networking
+              Your personal networking dashboard
             </p>
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-12 px-4 md:py-20 bg-muted/50">
+      {/* Connection Summary Section */}
+      <section className="py-6 px-4 md:py-12">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4 md:text-4xl">Features</h2>
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-bold mb-2 md:text-3xl">
+              Your Connections
+            </h2>
             <p className="text-muted-foreground">
-              Discover what makes Tapper special
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading your connections...
+                </span>
+              ) : error ? (
+                <span className="text-red-500">{error}</span>
+              ) : (
+                `You met ${connectionSummary.total} people with similar interests as you`
+              )}
             </p>
           </div>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            <Card>
+
+          {/* Connection Stats Cards - Horizontal Layout */}
+          <div className="mb-8">
+            <Card className="overflow-hidden">
+              <CardContent className="p-0">
+                <div className="flex flex-col sm:flex-row">
+                  {/* Sports */}
+                  <div className="flex-1 text-center p-6 border-b sm:border-b-0 sm:border-r border-border">
+                    <div className="mb-3">
+                      <div className="mx-auto mb-2 w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                        <Trophy className="w-6 h-6 text-orange-600" />
+                      </div>
+                      <h3 className="text-lg font-semibold">Sports</h3>
+                    </div>
+                    <div className="text-3xl font-bold text-primary mb-1">
+                      {loading ? (
+                        <Loader2 className="h-8 w-8 animate-spin mx-auto" />
+                      ) : (
+                        connectionSummary.sports
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Shared interests
+                    </p>
+                  </div>
+
+                  {/* Professional */}
+                  <div className="flex-1 text-center p-6 border-b sm:border-b-0 sm:border-r border-border">
+                    <div className="mb-3">
+                      <div className="mx-auto mb-2 w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                        <Briefcase className="w-6 h-6 text-blue-600" />
+                      </div>
+                      <h3 className="text-lg font-semibold">Professional</h3>
+                    </div>
+                    <div className="text-3xl font-bold text-primary mb-1">
+                      {loading ? (
+                        <Loader2 className="h-8 w-8 animate-spin mx-auto" />
+                      ) : (
+                        connectionSummary.professional
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Career connections
+                    </p>
+                  </div>
+
+                  {/* Interests */}
+                  <div className="flex-1 text-center p-6 border-b sm:border-b-0 sm:border-r border-border">
+                    <div className="mb-3">
+                      <div className="mx-auto mb-2 w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center">
+                        <Heart className="w-6 h-6 text-pink-600" />
+                      </div>
+                      <h3 className="text-lg font-semibold">Interests</h3>
+                    </div>
+                    <div className="text-3xl font-bold text-primary mb-1">
+                      {loading ? (
+                        <Loader2 className="h-8 w-8 animate-spin mx-auto" />
+                      ) : (
+                        connectionSummary.interests
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Common hobbies
+                    </p>
+                  </div>
+
+                  {/* Skills */}
+                  <div className="flex-1 text-center p-6">
+                    <div className="mb-3">
+                      <div className="mx-auto mb-2 w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                        <Users className="w-6 h-6 text-green-600" />
+                      </div>
+                      <h3 className="text-lg font-semibold">Skills</h3>
+                    </div>
+                    <div className="text-3xl font-bold text-primary mb-1">
+                      {loading ? (
+                        <Loader2 className="h-8 w-8 animate-spin mx-auto" />
+                      ) : (
+                        connectionSummary.skills
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Shared skills
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Mobile Interest Breakdown - Only visible on mobile */}
+          <div className="lg:hidden mb-8">
+            <h3 className="text-xl font-semibold mb-4 text-center">
+              Your Interest Connections
+            </h3>
+            <div className="space-y-3">
+              {Object.entries(interestBreakdown)
+                .sort(([, a], [, b]) => b - a) // Sort by count descending
+                .slice(0, 6) // Show top 6 interests
+                .map(([interest, count]) => (
+                  <Card key={interest} className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                          <span className="text-lg">
+                            {interest.toLowerCase().includes('tennis') && '🎾'}
+                            {interest.toLowerCase().includes('basketball') &&
+                              '🏀'}
+                            {interest.toLowerCase().includes('running') && '🏃'}
+                            {interest.toLowerCase().includes('react') && '⚛️'}
+                            {interest.toLowerCase().includes('javascript') &&
+                              '💻'}
+                            {interest.toLowerCase().includes('photography') &&
+                              '📸'}
+                            {interest.toLowerCase().includes('leadership') &&
+                              '👥'}
+                            {interest.toLowerCase().includes('cooking') && '👨‍🍳'}
+                            {![
+                              'tennis',
+                              'basketball',
+                              'running',
+                              'react',
+                              'javascript',
+                              'photography',
+                              'leadership',
+                              'cooking',
+                            ].some((keyword) =>
+                              interest.toLowerCase().includes(keyword)
+                            ) && '🎯'}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">
+                            You met{' '}
+                            <span className="font-bold text-primary">
+                              {count}
+                            </span>{' '}
+                            people into
+                          </p>
+                          <p className="text-lg font-semibold">{interest}</p>
+                        </div>
+                      </div>
+                      <div className="text-2xl font-bold text-primary">
+                        {loading ? (
+                          <Loader2 className="h-6 w-6 animate-spin" />
+                        ) : (
+                          count
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+            </div>
+          </div>
+
+          {/* Total Summary Card */}
+          <div className="max-w-md mx-auto">
+            <Card className="text-center bg-primary text-primary-foreground">
               <CardHeader>
-                <CardTitle>Sports Matching</CardTitle>
+                <CardTitle className="text-xl">Total Connections</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-5xl font-bold mb-2">
+                  {loading ? (
+                    <Loader2 className="h-12 w-12 animate-spin mx-auto" />
+                  ) : (
+                    connectionSummary.total
+                  )}
+                </div>
+                <p className="opacity-90">People with shared interests</p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Quick Actions Section */}
+      <section className="py-6 px-4 md:py-12 bg-muted/30">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-bold mb-2 md:text-3xl">
+              Quick Actions
+            </h2>
+            <p className="text-muted-foreground">
+              Explore and manage your connections
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 max-w-4xl mx-auto">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer">
+              <CardHeader className="text-center">
+                <CardTitle className="text-lg">Explore People</CardTitle>
                 <CardDescription>
-                  Find people who share your sports interests
+                  Discover new connections based on your interests
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Connect with athletes and sports enthusiasts in your area
-                </p>
-              </CardContent>
             </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Professional Network</CardTitle>
+
+            <Card className="hover:shadow-md transition-shadow cursor-pointer">
+              <CardHeader className="text-center">
+                <CardTitle className="text-lg">My Tags</CardTitle>
                 <CardDescription>
-                  Build your professional network through sports
+                  Manage your interests and skill tags
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Meet professionals who share your passion for sports
-                </p>
-              </CardContent>
             </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Event Organization</CardTitle>
-                <CardDescription>Create and join sports events</CardDescription>
+
+            <Card className="hover:shadow-md transition-shadow cursor-pointer">
+              <CardHeader className="text-center">
+                <CardTitle className="text-lg">Profile</CardTitle>
+                <CardDescription>
+                  Update your profile and preferences
+                </CardDescription>
               </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Organize tournaments, training sessions, and casual games
-                </p>
-              </CardContent>
             </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="py-12 px-4 md:py-20">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4 md:text-4xl">Our Impact</h2>
-            <p className="text-muted-foreground">
-              Join thousands of active users
-            </p>
-          </div>
-          <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-primary mb-2 md:text-4xl">
-                10K+
-              </div>
-              <div className="text-sm text-muted-foreground">Active Users</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-primary mb-2 md:text-4xl">
-                500+
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Events Created
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-primary mb-2 md:text-4xl">
-                50+
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Sports Categories
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-primary mb-2 md:text-4xl">
-                95%
-              </div>
-              <div className="text-sm text-muted-foreground">
-                User Satisfaction
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-12 px-4 md:py-20 bg-primary text-primary-foreground">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-4 md:text-4xl">
-            Ready to Get Started?
-          </h2>
-          <p className="text-lg mb-8 opacity-90">
-            Join our community and start connecting with people who share your
-            passion for sports
-          </p>
-          <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4 sm:justify-center">
-            <button className="px-8 py-3 bg-background text-foreground rounded-lg font-medium hover:bg-muted transition-colors">
-              Get Started
-            </button>
-            <button className="px-8 py-3 border border-primary-foreground/20 rounded-lg font-medium hover:bg-primary-foreground/10 transition-colors">
-              Learn More
-            </button>
           </div>
         </div>
       </section>
