@@ -21,6 +21,7 @@ import {
     X,
     AlertCircle,
 } from 'lucide-react'
+import { Wallet } from 'lucide-react'
 import { getRequest, putRequest } from '../utility/generalServices'
 import { getCurrentUser, getUserId } from '../utility/auth'
 import { toast } from 'sonner'
@@ -223,7 +224,7 @@ export default function Profile() {
             <div className="max-w-6xl mx-auto">
                 {/* Header */}
                 <div className="mb-8">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between flex-wrap gap-4">
                         <div className="flex items-center space-x-3">
                             <User className="w-8 h-8 text-primary" />
                             <h1 className="text-3xl font-bold md:text-4xl">Profile</h1>
@@ -258,6 +259,26 @@ export default function Profile() {
                     <p className="text-muted-foreground mt-2">
                         {isEditing ? 'Edit your profile information' : 'View and manage your profile information'}
                     </p>
+
+                    {/* ENS Profile */}
+                    <div className="mt-6 w-full md:max-w-md">
+                        <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg">
+                            <div className="flex-shrink-0">
+                                <img
+                                    src="/rahul.jpeg"
+                                    alt="ENS Avatar"
+                                    className="w-10 h-10 rounded-full border-2 border-primary/20"
+                                />
+                            </div>
+                            <div className="flex flex-col min-w-0 flex-1">
+                                <div className="flex items-center gap-2">
+                                    <span className="font-semibold text-sm truncate">dandona.eth</span>
+                                    <span className="text-xs text-muted-foreground bg-primary/10 px-2 py-1 rounded-full">ENS</span>
+                                </div>
+                                <span className="text-xs text-muted-foreground font-mono truncate">0x8f3c...g281</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Error Display */}
