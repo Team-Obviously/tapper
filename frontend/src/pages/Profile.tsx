@@ -21,7 +21,7 @@ import {
     X,
     AlertCircle,
 } from 'lucide-react'
-import EnsProfile from '../components/EnsProfile'
+import { Wallet } from 'lucide-react'
 import { getRequest, putRequest } from '../utility/generalServices'
 import { getCurrentUser, getUserId } from '../utility/auth'
 import { toast } from 'sonner'
@@ -261,8 +261,23 @@ export default function Profile() {
                     </p>
 
                     {/* ENS Profile */}
-                    <div className="mt-6">
-                        <EnsProfile className="w-full md:max-w-md" />
+                    <div className="mt-6 w-full md:max-w-md">
+                        <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg">
+                            <div className="flex-shrink-0">
+                                <img
+                                    src="/rahul.jpeg"
+                                    alt="ENS Avatar"
+                                    className="w-10 h-10 rounded-full border-2 border-primary/20"
+                                />
+                            </div>
+                            <div className="flex flex-col min-w-0 flex-1">
+                                <div className="flex items-center gap-2">
+                                    <span className="font-semibold text-sm truncate">dandona.eth</span>
+                                    <span className="text-xs text-muted-foreground bg-primary/10 px-2 py-1 rounded-full">ENS</span>
+                                </div>
+                                <span className="text-xs text-muted-foreground font-mono truncate">0x8f3c...g281</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
