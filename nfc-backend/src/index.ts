@@ -16,6 +16,7 @@ import { zkSimilarityRouter } from './routers/zkSimilarityRouter';
 import { contractRouter } from './routers/contractRouter';
 import invitationRouter from './routers/invitationRouter';
 import telegramRouter from './routers/telegramRouter';
+import { zkProofRouter } from './routers/zkProofRouter';
 import { requestLogger } from './middleware/requestLogger';
 
 const app = express();
@@ -35,6 +36,7 @@ app.use('/api/zk-similarity', zkSimilarityRouter);
 app.use('/api/contract', contractRouter);
 app.use('/api/invitations', invitationRouter);
 app.use('/api/telegram', telegramRouter);
+app.use('/api/zk-proof', zkProofRouter);
 
 const port = Number(process.env.PORT || 3000);
 app.listen(port, () => {

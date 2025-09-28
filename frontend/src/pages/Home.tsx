@@ -751,32 +751,50 @@ export default function Home() {
             </Card>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 max-w-4xl mx-auto">
-            <Card className="hover:shadow-md transition-shadow cursor-pointer">
-              <CardHeader className="text-center">
-                <CardTitle className="text-lg">Explore People</CardTitle>
-                <CardDescription>
-                  Discover new connections based on your interests
-                </CardDescription>
-              </CardHeader>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
+            <Card
+              className="hover:bg-muted/50 transition-all cursor-pointer"
+              onClick={() => navigate('/dashboard/explore')}
+            >
+              <CardContent className="p-4 flex items-center">
+                <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mr-3">
+                  <Users className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-sm">Explore People</h4>
+                  <p className="text-xs text-muted-foreground">Discover new connections</p>
+                </div>
+              </CardContent>
             </Card>
 
-            <Card className="hover:shadow-md transition-shadow cursor-pointer">
-              <CardHeader className="text-center">
-                <CardTitle className="text-lg">My Tags</CardTitle>
-                <CardDescription>
-                  Manage your interests and skill tags
-                </CardDescription>
-              </CardHeader>
+            <Card
+              className="hover:bg-muted/50 transition-all cursor-pointer"
+              onClick={() => navigate('/dashboard/my-tags')}
+            >
+              <CardContent className="p-4 flex items-center">
+                <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mr-3">
+                  <Tag className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-sm">My Tags</h4>
+                  <p className="text-xs text-muted-foreground">Manage your interests</p>
+                </div>
+              </CardContent>
             </Card>
 
-            <Card className="hover:shadow-md transition-shadow cursor-pointer">
-              <CardHeader className="text-center">
-                <CardTitle className="text-lg">Profile</CardTitle>
-                <CardDescription>
-                  Update your profile and preferences
-                </CardDescription>
-              </CardHeader>
+            <Card
+              className="hover:bg-muted/50 transition-all cursor-pointer"
+              onClick={() => navigate('/dashboard/profile')}
+            >
+              <CardContent className="p-4 flex items-center">
+                <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mr-3">
+                  <User className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-sm">Profile</h4>
+                  <p className="text-xs text-muted-foreground">Update your settings</p>
+                </div>
+              </CardContent>
             </Card>
           </div>
         </div>

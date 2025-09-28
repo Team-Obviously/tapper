@@ -1,13 +1,15 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Button } from './ui/button'
 import { logout } from '../utility/auth'
-import { Home, Tag, User, LogOut, Search } from 'lucide-react'
+import { Home, Tag, User, LogOut, Search, FileText, Bell } from 'lucide-react'
 
 const navigationItems = [
   { name: 'Home', href: '/dashboard/home', icon: Home },
   { name: 'My Tags', href: '/dashboard/my-tags', icon: Tag },
   { name: 'Profile', href: '/dashboard/profile', icon: User },
   { name: 'Explore', href: '/dashboard/explore', icon: Search },
+  { name: 'Notifications', href: '/dashboard/notifications', icon: Bell },
+  // { name: 'ZK PDF', href: '/dashboard/zkpdf', icon: FileText }
 ]
 
 export default function Navbar() {
@@ -34,11 +36,10 @@ export default function Navbar() {
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={`flex flex-col items-center justify-center min-h-[60px] min-w-[60px] px-3 py-2 rounded-lg transition-colors ${
-                    isActive
-                      ? 'text-primary bg-primary/10'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                  }`}
+                  className={`flex flex-col items-center justify-center min-h-[60px] min-w-[60px] px-3 py-2 rounded-lg transition-colors ${isActive
+                    ? 'text-primary bg-primary/10'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                    }`}
                 >
                   <item.icon
                     className={`h-5 w-5 mb-1 ${isActive ? 'scale-110' : ''}`}
@@ -49,7 +50,7 @@ export default function Navbar() {
                 </Link>
               )
             })}
-            <Button
+            {/* <Button
               variant="ghost"
               size="sm"
               onClick={handleLogout}
@@ -59,7 +60,7 @@ export default function Navbar() {
               <span className="text-xs font-medium leading-tight text-center">
                 Sign Out
               </span>
-            </Button>
+            </Button> */}
           </div>
         </nav>
       </div>
@@ -87,11 +88,10 @@ export default function Navbar() {
                     <li key={item.name}>
                       <Link
                         to={item.href}
-                        className={`flex items-center space-x-3 px-3 py-3 rounded-lg text-base font-medium transition-colors ${
-                          isActive
-                            ? 'bg-primary text-primary-foreground'
-                            : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                        }`}
+                        className={`flex items-center space-x-3 px-3 py-3 rounded-lg text-base font-medium transition-colors ${isActive
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                          }`}
                       >
                         <item.icon className="h-5 w-5" />
                         <span>{item.name}</span>

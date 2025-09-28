@@ -6,6 +6,8 @@ import MyTags from '@/pages/MyTags'
 import Explore from '@/pages/Explore'
 import Profile from '@/pages/Profile'
 import UserProfile from '@/pages/UserProfile'
+import ZkPdfVerification from '@/pages/ZkPdfVerification'
+import Notifications from '@/pages/Notifications'
 import { BrowserRouterProps, createBrowserRouter } from 'react-router-dom'
 import Layout from '@/components/Layout'
 const AppRoutes: BrowserRouterProps = createBrowserRouter([
@@ -48,6 +50,14 @@ const AppRoutes: BrowserRouterProps = createBrowserRouter([
       {
         path: '/dashboard/user/:userId',
         element: <UserProfile />,
+      },
+      {
+        path: '/dashboard/zkpdf',
+        element: <ZkPdfVerification />,
+      },
+      {
+        path: '/dashboard/notifications',
+        element: <Notifications />,
       },
     ],
   },
