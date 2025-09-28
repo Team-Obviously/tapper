@@ -1,4 +1,11 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Load environment variables from the root directory
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.join(__dirname, '../../.env') });
 import express from 'express';
 import cors from 'cors';
 import { json, urlencoded } from 'express';
@@ -8,6 +15,7 @@ import { similarityRouter } from './routers/similarityRouter';
 import { zkSimilarityRouter } from './routers/zkSimilarityRouter';
 import { contractRouter } from './routers/contractRouter';
 import invitationRouter from './routers/invitationRouter';
+import telegramRouter from './routers/telegramRouter';
 import { requestLogger } from './middleware/requestLogger';
 
 const app = express();
@@ -26,6 +34,7 @@ app.use('/api/similarity', similarityRouter);
 app.use('/api/zk-similarity', zkSimilarityRouter);
 app.use('/api/contract', contractRouter);
 app.use('/api/invitations', invitationRouter);
+app.use('/api/telegram', telegramRouter);
 
 const port = Number(process.env.PORT || 3000);
 app.listen(port, () => {

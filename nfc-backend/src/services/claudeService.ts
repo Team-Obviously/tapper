@@ -5,9 +5,9 @@ export class ClaudeService {
     private baseUrl = 'https://api.anthropic.com/v1/messages';
 
     constructor() {
-        this.apiKey = process.env.CLAUDE_API_KEY || '';
+        this.apiKey = process.env.CLAUDE_API || '';
         if (!this.apiKey) {
-            throw new Error('CLAUDE_API_KEY environment variable is required');
+            throw new Error('CLAUDE_API environment variable is required');
         }
     }
 

@@ -181,7 +181,7 @@ export async function updateUser(req: Request, res: Response) {
         const allowedFields = [
             'firstName', 'lastName', 'email', 'phone', 'location',
             'interests', 'skillLevel', 'availability', 'company',
-            'position', 'experience', 'isHiring', 'isOpenToRelationships', 'resumeUrl'
+            'position', 'experience', 'isHiring', 'isOpenToRelationships', 'resumeUrl', 'data'
         ];
 
         const processedData: any = {};

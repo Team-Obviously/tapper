@@ -46,9 +46,13 @@ function determineMessageType(similarity: number, profileMatching: string[]) {
  */
 export async function generateMessage(req: Request, res: Response) {
     try {
+        console.log('=== GENERATE MESSAGE DEBUG START ===');
+        console.log('Request body:', req.body);
+        
         // Validate request body
         const validation = generateMessageSchema.safeParse(req.body);
         if (!validation.success) {
+            console.log('Validation failed:', validation.error);
             return res.status(400).json({
                 success: false,
                 error: 'Invalid request parameters',
@@ -57,6 +61,7 @@ export async function generateMessage(req: Request, res: Response) {
         }
 
         const { fromUserId, toUserId } = validation.data;
+        console.log('Parsed user IDs:', fromUserId, toUserId);
 
         // Get both users from database
         const [fromUser] = await db
@@ -90,7 +95,9 @@ export async function generateMessage(req: Request, res: Response) {
         }
 
         // Calculate similarity between users
+        console.log('Calculating similarity between users:', fromUserId, toUserId);
         const similarityResult = await similarityService.calculateSimilarity(fromUserId, toUserId);
+        console.log('Similarity result:', similarityResult);
 
         // Determine message type based on similarity
         const messageType = determineMessageType(similarityResult.similarity, similarityResult.profileMatching);
@@ -112,6 +119,7 @@ export async function generateMessage(req: Request, res: Response) {
         }
 
         // Generate personalized message using Claude
+        console.log('Generating message with Claude for message type:', messageType);
         const message = await claudeService.generatePersonalizedMessage(
             {
                 firstName: fromUser.firstName || 'there',
@@ -129,6 +137,7 @@ export async function generateMessage(req: Request, res: Response) {
             messageType,
             sharedInterests
         );
+        console.log('Generated message:', message);
 
         // Generate Telegram URL
         const telegramUrl = generateTelegramUrl(message, toUserTelegramId);
