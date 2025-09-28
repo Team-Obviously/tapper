@@ -16,13 +16,10 @@ import {
     Calendar,
     Tag,
     ArrowLeft,
-    Users,
-    Heart,
-    MessageCircle,
     Share2,
-    Briefcase
 } from 'lucide-react'
 import { Avatar, AvatarFallback } from '../components/ui/avatar'
+import TelegramMessageButton from '../components/TelegramMessageButton'
 
 interface UserProfileData {
     id: string
@@ -33,10 +30,6 @@ interface UserProfileData {
     joinDate?: string
     bio?: string
     interests?: string[]
-    isHiring?: string
-    isOpenToRelationships?: string
-    company?: string
-    position?: string
 }
 
 interface ConnectionDetails {
@@ -52,6 +45,21 @@ export default function UserProfile() {
     const [connectionDetails, setConnectionDetails] = useState<ConnectionDetails | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+
+    // Get current user ID from localStorage
+    const getCurrentUserId = () => {
+        const userData = localStorage.getItem('user')
+        if (userData) {
+            try {
+                const user = JSON.parse(userData)
+                return user.id
+            } catch (error) {
+                console.error('Error parsing user data:', error)
+                return null
+            }
+        }
+        return null
+    }
 
     // Get connection details from location state if available
     useEffect(() => {
@@ -90,11 +98,7 @@ export default function UserProfile() {
                     location: 'New Delhi, India',
                     joinDate: new Date().toISOString(),
                     bio: 'A passionate individual who loves connecting with like-minded people.',
-                    interests: ['Basketball', 'Tennis', 'JavaScript', 'React', 'Photography'],
-                    isHiring: 'true',
-                    isOpenToRelationships: 'true',
-                    company: 'Tech Innovations Inc.',
-                    position: 'Senior Developer'
+                    interests: ['Basketball', 'Tennis', 'JavaScript', 'React', 'Photography']
                 }
 
                 setUser(mockUser)
@@ -195,21 +199,6 @@ export default function UserProfile() {
                                         <span>Connected on {new Date(connectionDetails.connectedDate).toLocaleDateString()}</span>
                                     </div>
                                 )}
-
-                                {/* Status Badges */}
-                                <div className="flex flex-wrap gap-2 mt-3">
-                                    {user.isHiring === 'true' && (
-                                        <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200 border-blue-200">
-                                            <Briefcase className="mr-1 h-3 w-3" /> Currently Hiring
-                                        </Badge>
-                                    )}
-
-                                    {user.isOpenToRelationships === 'true' && (
-                                        <Badge className="bg-pink-100 text-pink-800 hover:bg-pink-200 border-pink-200">
-                                            <Heart className="mr-1 h-3 w-3" /> Open to Dating
-                                        </Badge>
-                                    )}
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -247,29 +236,10 @@ export default function UserProfile() {
                         <CardHeader>
                             <CardTitle>About</CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-4">
+                        <CardContent>
                             <p className="text-muted-foreground">
                                 {user.bio || `${user.firstName} hasn't added a bio yet.`}
                             </p>
-
-                            {/* Work Information */}
-                            {(user.company || user.position) && (
-                                <div className="mt-4 pt-4 border-t">
-                                    <h3 className="font-medium text-sm mb-2">Work Information</h3>
-                                    {user.company && (
-                                        <div className="flex items-center space-x-2 text-sm">
-                                            <span className="font-medium">Company:</span>
-                                            <span>{user.company}</span>
-                                        </div>
-                                    )}
-                                    {user.position && (
-                                        <div className="flex items-center space-x-2 text-sm mt-1">
-                                            <span className="font-medium">Position:</span>
-                                            <span>{user.position}</span>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
                         </CardContent>
                     </Card>
 
@@ -322,10 +292,12 @@ export default function UserProfile() {
                             <CardTitle>Actions</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-2">
-                            <Button className="w-full">
-                                <MessageCircle className="mr-2 h-4 w-4" />
-                                Message
-                            </Button>
+                            <TelegramMessageButton
+                                fromUserId={getCurrentUserId() || ''}
+                                toUserId={user.id}
+                                toUserName={user.firstName}
+                                className="w-full"
+                            />
                             <Button variant="outline" className="w-full">
                                 <Share2 className="mr-2 h-4 w-4" />
                                 Share Profile
@@ -333,7 +305,7 @@ export default function UserProfile() {
                         </CardContent>
                     </Card>
 
-
+                    
                 </div>
             </div>
         </div>
