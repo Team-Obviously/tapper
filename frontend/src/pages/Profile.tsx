@@ -21,6 +21,7 @@ import {
     X,
     AlertCircle,
 } from 'lucide-react'
+import EnsProfile from '../components/EnsProfile'
 import { getRequest, putRequest } from '../utility/generalServices'
 import { getCurrentUser, getUserId } from '../utility/auth'
 import { toast } from 'sonner'
@@ -223,7 +224,7 @@ export default function Profile() {
             <div className="max-w-6xl mx-auto">
                 {/* Header */}
                 <div className="mb-8">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between flex-wrap gap-4">
                         <div className="flex items-center space-x-3">
                             <User className="w-8 h-8 text-primary" />
                             <h1 className="text-3xl font-bold md:text-4xl">Profile</h1>
@@ -258,6 +259,11 @@ export default function Profile() {
                     <p className="text-muted-foreground mt-2">
                         {isEditing ? 'Edit your profile information' : 'View and manage your profile information'}
                     </p>
+
+                    {/* ENS Profile */}
+                    <div className="mt-6">
+                        <EnsProfile className="w-full md:max-w-md" />
+                    </div>
                 </div>
 
                 {/* Error Display */}

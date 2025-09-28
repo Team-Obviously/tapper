@@ -11,7 +11,7 @@ interface EnsProfileProps {
 export const EnsProfile: React.FC<EnsProfileProps> = ({ onConnect, className = '' }) => {
   const { address, isConnected } = useAccount()
   const { data: ensName } = useEnsName({ address, chainId: 1 })
-  const { data: ensAvatar } = useEnsAvatar({ name: ensName, chainId: 1 })
+  const { data: ensAvatar } = useEnsAvatar({ name: ensName || undefined, chainId: 1 })
 
   if (!isConnected || !address) {
     return (
@@ -47,7 +47,7 @@ export const EnsProfile: React.FC<EnsProfileProps> = ({ onConnect, className = '
           </div>
         )}
       </div>
-      
+
       <div className="flex flex-col min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className="font-semibold text-sm truncate">
